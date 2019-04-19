@@ -25,13 +25,18 @@ class MainWidget(BaseWidget):
         self.add_widget(self.info)
 
     def on_key_down(self, keycode, modifiers):
+        # up/down key will move character
+        # spacebar will release bubbles
         if keycode[1] == '.':
             pass
 
     def on_key_up(self, keycode):
+        # spacebar: stop releasing bubbles
+        # up/down: stop moving
         pass
 
     def on_update(self):
+        # call Character onupdate 
         self.info.text = ''
 
 
