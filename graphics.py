@@ -15,7 +15,33 @@ from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
 
 from random import random, choice
 
-kspeed = 10000 # pixels/sec
+kSpeed = 10000  # pixels/sec
+
+# MaterialUI color palette (rgb)
+kPalette = {"red400": (239, 83, 80),
+            "pink400": (236, 64, 122),
+            "purple400": (171, 71, 188),
+            "deep_purple400": (126, 87, 194),
+            "indigo400": (92, 107, 192),
+            "blue400": (66, 165, 245),
+            "light_blue400": (41, 182, 246),
+            "cyan400": (38, 198, 218),
+            "teal400": (38, 166, 154),
+            "green400": (102, 187, 106),
+            "light_green400": (156, 204, 101),
+            "lime400": (212, 225, 87),
+            "yellow400": (255, 238, 88),
+            "amber400": (255, 202, 40),
+            "orange400": (255, 167, 38),
+            "deep_orange400": (255, 112, 67),
+            "brown400": (141, 110, 99),
+            "blue_gray400": (120, 144, 156),
+            "gray50": (250, 250, 250),
+            "gray400": (189, 189, 189),
+            "gray800": (66, 66, 66),
+            "gray900": (33, 33, 33),
+            }
+
 
 class Character(InstructionGroup):
     """Character draws the character, handles audio data, and draws bubbles behind the character"""
@@ -24,13 +50,14 @@ class Character(InstructionGroup):
 
         self.audio = spotify_player
 
-        self.character = CEllipse(cpos = (Window.width*3/4,Window.height/2), csize=(50,50), sizesegments=20)
-        self.color = Color(*(1,1,0))
+        self.character = CEllipse(cpos=(Window.width*3/4, Window.height/2), csize=(50, 50), sizesegments=20)
+        self.color = Color(*(1, 1, 0))
         self.add(self.color)
         self.add(self.character)
 
         self.onbeat_bubbles = []
         self.offbeat_bubbles = []
+        self.kill_list = []
 
         self.is_onbeat = False
 
@@ -45,11 +72,12 @@ class Character(InstructionGroup):
         if self.is_onbeat:
             for bubble in self.onbeat_bubbles:
                 bubble.on_beat()
-            bubble = OnBeatBubble(self.character.cpos, 20, (1,0,1), kspeed)
+            bubble = OnBeatBubble(self.character.cpos, 20, (1,0,1), kSpeed)
             self.add(bubble)
             self.onbeat_bubbles.append(bubble)
         else:
-            bubble = OffBeatSpray((self.character.cpos[0]/2, self.character.cpos[1]/2), [(1,0,0), (0,1,0)], animate=True)
+            bubble = OffBeatSpray((self.character.cpos[0]/2, self.character.cpos[1]/2), [(1, 0, 0), (0, 1, 0)],
+                                  animate=False)
             self.add(bubble)
             self.offbeat_bubbles.append(bubble)
 
@@ -67,14 +95,25 @@ class Character(InstructionGroup):
         # self.time = self.audio.get_time()
 
         #if self.audio.is_onbeat():
+        for bubble in self.kill_list:
+            self.remove(bubble)
+
         if self.time > 4:
             self.is_onbeat = True
             self.time -= 4
         else:
             self.is_onbeat = False
 
-        for bubble in self.onbeat_bubbles+self.offbeat_bubbles:
+        for bubble in self.onbeat_bubbles + self.offbeat_bubbles:
             bubble.on_update(dt)
+
+        for bubble in self.onbeat_bubbles:
+            if bubble.dot.cpos[0] < -20:
+                self.kill_list.append(bubble)
+
+        for bubble in self.offbeat_bubbles:
+            if bubble.translate.x < -Window.width/2:
+                self.kill_list.append(bubble)
 
 
 class OnBeatBubble(InstructionGroup):
@@ -131,7 +170,7 @@ class OffBeatSpray(InstructionGroup):
         The colors map to the two most prominent pitch classes of that beat.
 
         :param pos: (tuple) center position of spray in pixels, e.g. (1040, 980)
-        :param colors: (tuple) possible rgb tuples for the color, e.g. ((255, 255, 255), (155, 155, 251))
+        :param colors: (tuple) possible tuples for the color, e.g. ((255, 255, 255), (155, 155, 251))
         :param bound: (int) radial bound on the spray
         :param dot_size: (int) radius of the dots
         :param num_dots: (int) number of dots in the spray
@@ -176,9 +215,6 @@ class OffBeatSpray(InstructionGroup):
 
         self.translate.x = self.translate.x - 10
         print(self.translate.x)
-
-    def on_touch_move(self, pos):
-        pass
 
 
 class TestWidget(BaseWidget):
