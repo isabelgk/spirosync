@@ -23,8 +23,6 @@ class Character(object):
 
         self.audio = spotify_player
 
-        one_bubble = OnBeatBubble((Window.width*3/4,Window.height/2), 50, (1,1,0))
-
         # Time keeping
         self.duration = duration
         self.speed = speed
@@ -56,6 +54,7 @@ class OnBeatBubble(InstructionGroup):
         super().__init__()
 
         self.original_pos = pos
+        self.radius = radius
 
         # Color
         self.color = Color(*color)
@@ -66,12 +65,16 @@ class OnBeatBubble(InstructionGroup):
         self.add(self.dot)
 
         # Animation
-        self.radius_anim = KFAnim((0, start_size), (duration, 0))
-        self.pos_anim = KFAnim((0, pos[0]), (pos[0]*speed, 0))
+        self.beat_anim = None
+        self.pos_anim = KFAnim((0, pos[0]), (speed/pos[0], 0))
+        self.shrink = False
 
         # Time keeping
         self.time = 0
         self.on_update(0)
+
+    def on_beat(self):
+        self.beat_anim = KFAnim((self.time, self.radius), (self.time+0.1, 2*self.radius))
 
     def on_update(self, dt):
         # rad = self.radius_anim.eval(self.time)
@@ -79,6 +82,16 @@ class OnBeatBubble(InstructionGroup):
 
         pos = self.pos_anim.eval(self.time)
         self.dot.cpos = (pos, self.original_pos[1])
+
+        if self.beat_anim is not None:
+            radius = self.beat_anim.eval(self.time)
+            self.dot.csize = (2*radius, 2*radius)
+            if radius == 2*self.radius:
+                self.beat_anim = KFAnim((self.time, 2*self.radius), (self.time+0.1, self.radius))
+                self.shrink = True
+            if radius == self.radius and self.shrink:
+                self.beat_anim = None
+                self.shrink = False
 
         self.time += dt
         # return self.radius_anim.is_active(self.time)
@@ -145,6 +158,11 @@ class TestWidget(BaseWidget):
         self.spray = OffBeatSpray((300, 300), ((100, 0, 30), (0, 50, 200)), animate=True)
         self.canvas.add(self.spray)
 
+        self.one_bubble = OnBeatBubble((Window.width*3/4,Window.height/2), 20, (1,1,0), 10000)
+        self.canvas.add(self.one_bubble)
+
+        self.time = 0
+
     def on_touch_move(self, touch):
         p = np.array(touch.pos) - np.array(self.spray.pos)
         self.spray.on_touch_move(p)
@@ -152,7 +170,15 @@ class TestWidget(BaseWidget):
     def on_update(self):
         dt = kivyClock.frametime
 
+        if self.time > 2:
+            self.one_bubble.on_beat()
+            self.time -= 2
+
         self.spray.on_update(dt)
+
+        self.one_bubble.on_update(dt)
+
+        self.time += dt
 
 
 if __name__ == "__main__":
