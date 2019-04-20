@@ -129,8 +129,8 @@ class OffBeatSpray(InstructionGroup):
         self.time += dt
         if self.animate:
             for dot in self.dots:
-                dot.pos = (dot.pos[0] + choice((-1, 1)) * 2,
-                           dot.pos[1] + choice((-1, 1)) * 2)
+                dot.pos = (dot.pos[0] + choice((-1, 1)) * random() * 2,
+                           dot.pos[1] + choice((-1, 1)) * random() * 2)
 
     def on_touch_move(self, pos):
         self.translate.x, self.translate.y = pos
