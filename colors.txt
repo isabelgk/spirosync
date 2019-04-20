@@ -1,0 +1,23 @@
+# Material UI colors
+
+rgb(239, 83, 80)  # Red 400
+rgb(236, 64, 122)  # Pink 400
+rgb(171, 71, 188)  # Purple 400
+rgb(126, 87, 194)  # Deep purple 400
+rgb(92, 107, 192)  # Indigo 400
+rgb(66, 165, 245)  # Blue 400
+rgb(41, 182, 246)  # Light blue 400
+rgb(38, 198, 218)  # Cyan 400
+rgb(38, 166, 154)  # Teal 400
+rgb(102, 187, 106)  # Green 400
+rgb(156, 204, 101)  # Light green 400
+rgb(212, 225, 87)  # Lime 400
+rgb(255, 238, 88)  # Yellow 400
+rgb(255, 202, 40)  # Amber 400
+rgb(255, 167, 38)  # Orange 400
+rgb(255, 112, 67)  # Deep orange 400
+rgb(141, 110, 99)  # Brown 400
+rgb(189, 189, 189)  # Gray 400
+rgb(120, 144, 156)  # Blue gray 400
+rgb(66, 66, 66)  # Gray 800
+rgb(33, 33, 33)  # Gray 900
