@@ -49,8 +49,7 @@ class Character(InstructionGroup):
             self.add(bubble)
             self.onbeat_bubbles.append(bubble)
         else:
-            bubble = OffBeatSpray(self.character.cpos, [(1,0,0), (0,1,0)])
-            print(bubble)
+            bubble = OffBeatSpray((self.character.cpos[0]/2, self.character.cpos[1]/2), [(1,0,0), (0,1,0)], animate=True)
             self.add(bubble)
             self.offbeat_bubbles.append(bubble)
 
@@ -109,8 +108,7 @@ class OnBeatBubble(InstructionGroup):
         # rad = self.radius_anim.eval(self.time)
         # self.dot.csize = 2*rad, 2*rad
 
-        pos = self.pos_anim.eval(self.time)
-        self.dot.cpos = (pos, self.original_pos[1])
+        self.dot.cpos = (self.dot.cpos[0] - 10, self.dot.cpos[1])
 
         if self.beat_anim is not None:
             radius = self.beat_anim.eval(self.time)
@@ -176,8 +174,11 @@ class OffBeatSpray(InstructionGroup):
                 dot.pos = (dot.pos[0] + choice((-1, 1)) * random() * 2,
                            dot.pos[1] + choice((-1, 1)) * random() * 2)
 
+        self.translate.x = self.translate.x - 10
+        print(self.translate.x)
+
     def on_touch_move(self, pos):
-        self.translate.x, self.translate.y = pos
+        pass
 
 
 class TestWidget(BaseWidget):

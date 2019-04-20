@@ -61,6 +61,7 @@ class MainWidget(BaseWidget):
         dt = kivyClock.frametime
         # call Character onupdate 
         self.info.text = ''
+        self.info.text += '%s' % str(self.character.character.cpos)
 
         if self.is_up:
             self.character.on_up_press()
