@@ -29,7 +29,8 @@ class Character(InstructionGroup):
         self.add(self.color)
         self.add(self.character)
 
-        self.bubbles = []
+        self.onbeat_bubbles = []
+        self.offbeat_bubbles = []
 
         self.is_onbeat = False
 
@@ -39,16 +40,19 @@ class Character(InstructionGroup):
         self.time = 0
         self.on_update(0)
 
-    def spacebar(self):
-        print(self.time)
+    def spacebar(self, dt):
+        self.time += dt
         if self.is_onbeat:
+            for bubble in self.onbeat_bubbles:
+                bubble.on_beat()
             bubble = OnBeatBubble(self.character.cpos, 20, (1,0,1), kspeed)
             self.add(bubble)
-            self.bubbles.append(bubble)
+            self.onbeat_bubbles.append(bubble)
         else:
-            bubble = OffBeatSpray(self.character.cpos, [(0.5,0.7,1), (1,1,0.3)])
+            bubble = OffBeatSpray(self.character.cpos, [(1,0,0), (0,1,0)])
+            print(bubble)
             self.add(bubble)
-            self.bubbles.append(bubble)
+            self.offbeat_bubbles.append(bubble)
 
     def on_up_press(self):
         current_pos = self.character.cpos
@@ -70,10 +74,8 @@ class Character(InstructionGroup):
         else:
             self.is_onbeat = False
 
-        for bubble in self.bubbles:
+        for bubble in self.onbeat_bubbles+self.offbeat_bubbles:
             bubble.on_update(dt)
-        
-        self.time += dt
 
 
 class OnBeatBubble(InstructionGroup):

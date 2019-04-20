@@ -67,7 +67,7 @@ class MainWidget(BaseWidget):
         if self.is_down:
             self.character.on_down_press()
         if self.spacebar_down:
-            self.character.spacebar()
+            self.character.spacebar(dt)
 
         self.character.on_update(dt)
 
