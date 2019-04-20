@@ -15,37 +15,64 @@ from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
 
 from random import random, choice
 
+kspeed = 10000 # pixels/sec
 
-class Character(object):
+class Character(InstructionGroup):
     """Character draws the character, handles audio data, and draws bubbles behind the character"""
     def __init__(self, spotify_player = None):
         super().__init__()
 
         self.audio = spotify_player
 
+        self.character = CEllipse(cpos = (Window.width*3/4,Window.height/2), csize=(50,50), sizesegments=20)
+        self.color = Color(*(1,1,0))
+        self.add(self.color)
+        self.add(self.character)
+
+        self.bubbles = []
+
+        self.is_onbeat = False
+
         # Time keeping
-        self.duration = duration
-        self.speed = speed
+        # self.duration = duration
+        # self.speed = speed
         self.time = 0
         self.on_update(0)
 
-    def toggle_spacebar(self):
-        pass
+    def spacebar(self):
+        print(self.time)
+        if self.is_onbeat:
+            bubble = OnBeatBubble(self.character.cpos, 20, (1,0,1), kspeed)
+            self.add(bubble)
+            self.bubbles.append(bubble)
+        else:
+            bubble = OffBeatSpray(self.character.cpos, [(0.5,0.7,1), (1,1,0.3)])
+            self.add(bubble)
+            self.bubbles.append(bubble)
 
     def on_up_press(self):
-        pass
-
-    def on_up_release(self):
-        pass
+        current_pos = self.character.cpos
+        if current_pos[1] < Window.height:
+            self.character.cpos = (current_pos[0], current_pos[1] + 10)
 
     def on_down_press(self):
-        pass
-
-    def on_down_release(self):
-        pass
+        current_pos = self.character.cpos
+        if current_pos[1] > 0:
+            self.character.cpos = (current_pos[0], current_pos[1] - 10)
 
     def on_update(self, dt):
-        #self.time = self.audio.get_time()
+        # self.time = self.audio.get_time()
+
+        #if self.audio.is_onbeat():
+        if self.time > 4:
+            self.is_onbeat = True
+            self.time -= 4
+        else:
+            self.is_onbeat = False
+
+        for bubble in self.bubbles:
+            bubble.on_update(dt)
+        
         self.time += dt
 
 
