@@ -1,21 +1,8 @@
 import sys
 sys.path.append('..')
-from common.core import *
-from common.gfxutil import *
-from common.audio import *
-from common.mixer import *
-from common.note import *
-from common.wavegen import *
-from common.wavesrc import *
-
-from kivy.core.window import Window, WindowBase
-from kivy.clock import Clock as kivyClock
-from kivy.uix.label import Label
-from kivy.graphics.instructions import InstructionGroup
-from kivy.graphics import Color, Ellipse, Rectangle, Line
-from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
 
 from graphics import *
+from spotify import *
 
 
 class MainWidget(BaseWidget):

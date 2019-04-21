@@ -15,9 +15,10 @@ from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
 
 from random import random, choice
 
-kSpeed = 10000  # pixels/sec
+from spotify import Song, User
 
-# MaterialUI color palette (rgb)
+# Constants
+kSpeed = 10000  # pixels/sec
 kPalette = {"red400": (239, 83, 80),
             "pink400": (236, 64, 122),
             "purple400": (171, 71, 188),
@@ -40,12 +41,43 @@ kPalette = {"red400": (239, 83, 80),
             "gray400": (189, 189, 189),
             "gray800": (66, 66, 66),
             "gray900": (33, 33, 33),
-            }
+            }  # rgb
+
+
+class ProgressBar(InstructionGroup):
+    """Graphics representing progress bar. Animates the fraction of the song that has played"""
+
+    def __init__(self, sections, duration):
+        super(ProgressBar, self).__init__()
+
+        self.add(Color(rgb=(0.2, 0.8, 0.5)))
+        self.length = Window.width * 0.9
+        self.buffer = Window.width * 0.05
+
+        self.sections = sections
+        self.duration = duration
+
+        start_pos = self.buffer
+        for section in self.sections:
+            self.add(Color(rgb=(0.2, random.random(), 0.5)))
+
+            section_length = section[1] * 1000
+            bar_length = self.length * (section_length / self.duration)
+            bar = Rectangle(pos=(start_pos, self.buffer), size=(bar_length, self.buffer))
+            start_pos += bar_length
+            self.add(bar)
+
+        self.add(Color(rgb=(0.4, 0.1, 0.1)))
+        self.progress_mark = Rectangle(pos=(self.buffer, self.buffer), size=(self.buffer / 10, self.buffer))
+        self.add(self.progress_mark)
+
+    def on_update(self, progress):
+        self.progress_mark.pos = ((self.length * progress) + self.buffer, self.buffer)
 
 
 class Character(InstructionGroup):
     """Character draws the character, handles audio data, and draws bubbles behind the character"""
-    def __init__(self, spotify_player = None):
+    def __init__(self, spotify_player=None):
         super().__init__()
 
         self.audio = spotify_player
@@ -228,10 +260,6 @@ class TestWidget(BaseWidget):
         self.canvas.add(self.one_bubble)
 
         self.time = 0
-
-    def on_touch_move(self, touch):
-        p = np.array(touch.pos) - np.array(self.spray.pos)
-        self.spray.on_touch_move(p)
 
     def on_update(self):
         dt = kivyClock.frametime
