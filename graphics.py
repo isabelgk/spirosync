@@ -77,10 +77,10 @@ class ProgressBar(InstructionGroup):
 
 class Character(InstructionGroup):
     """Character draws the character, handles audio data, and draws bubbles behind the character"""
-    def __init__(self, spotify_player=None):
+    def __init__(self, spotify_song=None):
         super().__init__()
 
-        self.audio = spotify_player
+        self.audio = spotify_song
 
         self.character = CEllipse(cpos=(Window.width*3/4, Window.height/2), csize=(50, 50), sizesegments=20)
         self.color = Color(*kPalette["gray50"])
@@ -125,7 +125,7 @@ class Character(InstructionGroup):
             self.character.cpos = (current_pos[0], current_pos[1] - 10)
 
     def on_update(self, dt):
-        # self.time = self.audio.get_time()
+        self.time = self.audio.get_time()
 
         #if self.audio.is_onbeat():
         for bubble in self.kill_list:
