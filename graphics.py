@@ -100,6 +100,9 @@ class Character(InstructionGroup):
         self.time = 0
         self.on_update(0)
 
+    def get_num_objects(self):
+        return len(self.onbeat_bubbles + self.offbeat_bubbles)
+
     def spacebar(self, time):
         self.time = time
         if self.is_onbeat:
@@ -128,7 +131,15 @@ class Character(InstructionGroup):
 
         #if self.audio.is_onbeat():
         for bubble in self.kill_list:
+            if bubble in self.onbeat_bubbles:
+                self.onbeat_bubbles.remove(bubble)
+            elif bubble in self.offbeat_bubbles:
+                self.offbeat_bubbles.remove(bubble)
+            else:
+                print(bubble)
+                print()
             self.remove(bubble)
+            self.kill_list.remove(bubble)
 
         self.is_onbeat = self.audio.get_current_song().on_bar(self.time, 0.1)
 
@@ -140,11 +151,11 @@ class Character(InstructionGroup):
             bubble.on_update(self.time)
 
         for bubble in self.onbeat_bubbles:
-            if bubble.dot.cpos[0] < -20:
+            if bubble.dot.cpos[0] < -20 and bubble not in self.onbeat_bubbles:
                 self.kill_list.append(bubble)
 
         for bubble in self.offbeat_bubbles:
-            if bubble.translate.x < -Window.width/2:
+            if bubble.translate.x < -Window.width/2 and bubble not in self.offbeat_bubbles:
                 self.kill_list.append(bubble)
 
 
