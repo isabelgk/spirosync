@@ -99,8 +99,8 @@ class Character(InstructionGroup):
         self.time = 0
         self.on_update(0)
 
-    def spacebar(self, dt):
-        self.time += dt
+    def spacebar(self, time):
+        self.time = time
         if self.is_onbeat:
             for bubble in self.onbeat_bubbles:
                 bubble.on_beat()
@@ -124,21 +124,21 @@ class Character(InstructionGroup):
         if current_pos[1] > 0:
             self.character.cpos = (current_pos[0], current_pos[1] - 10)
 
-    def on_update(self, dt):
-        self.time = self.audio.get_time()
+    def on_update(self, time):
+        self.time = time
 
         #if self.audio.is_onbeat():
         for bubble in self.kill_list:
             self.remove(bubble)
 
-        if self.time > 4:
+        if self.time > 4000:
             self.is_onbeat = True
-            self.time -= 4
+
         else:
             self.is_onbeat = False
 
         for bubble in self.onbeat_bubbles + self.offbeat_bubbles:
-            bubble.on_update(dt)
+            bubble.on_update(self.time)
 
         for bubble in self.onbeat_bubbles:
             if bubble.dot.cpos[0] < -20:
@@ -176,7 +176,7 @@ class OnBeatBubble(InstructionGroup):
     def on_beat(self):
         self.beat_anim = KFAnim((self.time, self.radius), (self.time+0.1, 2*self.radius))
 
-    def on_update(self, dt):
+    def on_update(self, time):
         # rad = self.radius_anim.eval(self.time)
         # self.dot.csize = 2*rad, 2*rad
 
@@ -192,7 +192,7 @@ class OnBeatBubble(InstructionGroup):
                 self.beat_anim = None
                 self.shrink = False
 
-        self.time += dt
+        self.time = time
         # return self.radius_anim.is_active(self.time)
 
 
@@ -239,22 +239,20 @@ class OffBeatSpray(InstructionGroup):
 
         self.add(PopMatrix())
 
-    def on_update(self, dt):
-        self.time += dt
+    def on_update(self, time):
+        self.time = time
         if self.animate:
             for dot in self.dots:
                 dot.pos = (dot.pos[0] + choice((-1, 1)) * random() * 2,
                            dot.pos[1] + choice((-1, 1)) * random() * 2)
-
         self.translate.x = self.translate.x - 10
-        print(self.translate.x)
 
 
 class TestWidget(BaseWidget):
     def __init__(self):
         super().__init__()
 
-        self.spray = OffBeatSpray((300, 300), ((100, 0, 30), (0, 50, 200)), animate=True)
+        self.spray = OffBeatSpray((300, 300), ((100, 0, 30), (0, 50, 200)), animate=False)
         self.canvas.add(self.spray)
 
         self.one_bubble = OnBeatBubble((Window.width * 3 / 4, Window.height / 2), 20, (1, 1, 0), 10000)
@@ -262,18 +260,17 @@ class TestWidget(BaseWidget):
 
         self.time = 0
 
-    def on_update(self):
-        dt = kivyClock.frametime
+    def on_update(self, time):
 
         if self.time > 2:
             self.one_bubble.on_beat()
             self.time -= 2
 
-        self.spray.on_update(dt)
+        self.spray.on_update()
 
-        self.one_bubble.on_update(dt)
+        self.one_bubble.on_update(time)
 
-        self.time += dt
+        self.time = time
 
 
 if __name__ == "__main__":

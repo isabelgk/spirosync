@@ -52,8 +52,11 @@ class MainWidget(BaseWidget):
             self.spacebar_down = False
 
     def on_update(self):
-        dt = kivyClock.frametime
-        # call Character onupdate 
+        # call Character onupdate
+
+        progress = self.audio.get_progress()
+        time = self.audio.get_time()
+
         self.info.text = ''
         self.info.text += '%s' % str(self.character.character.cpos)
 
@@ -62,11 +65,9 @@ class MainWidget(BaseWidget):
         if self.is_down:
             self.character.on_down_press()
         if self.spacebar_down:
-            self.character.spacebar(dt)
+            self.character.spacebar(time)
 
-        self.character.on_update(dt)
-
-        progress = self.audio.get_progress()
+        self.character.on_update(time)
 
         self.bar.on_update(progress)
 
