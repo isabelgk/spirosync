@@ -1,28 +1,22 @@
 import sys
 sys.path.append('..')
-from common.core import *
-from common.gfxutil import *
-from common.audio import *
-from common.mixer import *
-from common.note import *
-from common.wavegen import *
-from common.wavesrc import *
-
-from kivy.core.window import Window, WindowBase
-from kivy.clock import Clock as kivyClock
-from kivy.uix.label import Label
-from kivy.graphics.instructions import InstructionGroup
-from kivy.graphics import Color, Ellipse, Rectangle, Line
-from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
 
 from graphics import *
+from spotify import *
 
 
 class MainWidget(BaseWidget):
     def __init__(self):
         super(MainWidget, self).__init__()
 
-        self.character = Character()
+        self.audio = User("isabelkaspriskie")
+        self.sections = self.audio.get_current_song().get_sections()
+        self.duration = self.audio.get_current_song().duration
+
+        self.bar = ProgressBar(self.sections, self.duration)
+        self.canvas.add(self.bar)
+
+        self.character = Character(self.audio)
         self.canvas.add(self.character)
 
         self.is_up = False
@@ -71,6 +65,10 @@ class MainWidget(BaseWidget):
             self.character.spacebar(dt)
 
         self.character.on_update(dt)
+
+        progress = self.audio.get_progress()
+
+        self.bar.on_update(progress)
 
 
 if __name__ == "__main__":
