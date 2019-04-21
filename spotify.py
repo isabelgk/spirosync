@@ -16,6 +16,8 @@ from common.wavesrc import *
 from kivy.graphics.instructions import InstructionGroup
 from kivy.graphics import Color, Rectangle
 
+import random
+
 
 # harded coded values for spotify app
 client_id = 'f443660f40d348caa7b717a385341278'
@@ -34,6 +36,7 @@ class Song:
 		self.sp = spotify
 		self.duration = duration
 		self.beats = []
+		self.sections = []
 
 		data = self.sp.audio_analysis(self.track)
 
@@ -42,9 +45,17 @@ class Song:
 			if b['confidence'] > CONFIDENCE_THRESHOLD:
 				self.beats.append((b['start'], b['duration']))
 
+		for s in data['sections']:
+			if s['confidence'] > CONFIDENCE_THRESHOLD:
+				self.sections.append((s['start'], s['duration']))
 
-		print(self.beats)
+		print('loaded song')
 
+	def get_sections(self):
+		return self.sections
+
+	def get_beats(self):
+		return self.beats
 
 
 	def on_beat(self, time, threshold):
@@ -57,7 +68,7 @@ class Song:
 			if self.beats[i][0] > time:
 				break
 
-		print(time, self.beats[i][0])
+		print( min(time - self.beats[i-1][0], self.beats[i][0] - time))
 
 		# return true is close enough to beat directly before or after
 		return abs(time - self.beats[i-1][0]) < threshold or abs(time-self.beats[i][0]) < threshold
@@ -115,16 +126,27 @@ class ProgressBar(InstructionGroup):
 	'''
 	Graphics represnting progress bar. Animates the fraction of the song that has played
 	'''
-	def __init__(self):
+	def __init__(self, sections, duration):
 		super(ProgressBar, self).__init__()
 
 		self.add(Color(rgb=(0.2, 0.8, 0.5)))
 		self.length = Window.width * 0.9
 		self.buffer = Window.width * 0.05
 
+		self.sections = sections
+		self.duration = duration
 
-		self.bar = Rectangle(pos=(self.buffer, self.buffer), size=(self.length, self.buffer))
-		self.add(self.bar)
+		start_pos = self.buffer
+		for section in self.sections:
+			self.add(Color(rgb = (0.2, random.random(), 0.5)))
+
+			section_length = section[1] * 1000
+			bar_length = self.length * (section_length / self.duration)
+			print(bar_length)
+			bar = Rectangle(pos=(start_pos, self.buffer), size=(bar_length, self.buffer))
+			start_pos += bar_length
+			print(bar)
+			self.add(bar)
 
 		self.add(Color(rgb = (0.4, 0.1, 0.1)))
 		self.progress_mark = Rectangle(pos=(self.buffer,self.buffer), size=(self.buffer/10, self.buffer))
@@ -141,7 +163,11 @@ class TestWidget(BaseWidget):
 		# Serena's account
 		self.user = User('1235254187')
 
-		self.bar = ProgressBar()
+		# will only work for initial song
+		self.sections = self.user.get_current_song().get_sections()
+		self.duration = self.user.get_current_song().duration
+
+		self.bar = ProgressBar(self.sections, self.duration)
 		self.canvas.add(self.bar)
  
 	def on_key_down(self, keycode, modifiers):
@@ -150,7 +176,7 @@ class TestWidget(BaseWidget):
 		if keycode[1] == 'a':
 			song = self.user.get_current_song()
 			time = self.user.get_time()
-			print(time, song.on_beat(time, 0.1))
+			print(time, song.on_beat(time, 0.2))
 
 
 
