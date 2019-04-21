@@ -25,7 +25,7 @@ client_secret = '545a451afb794c2f83feb68547182da1'
 scope = 'user-read-currently-playing, user-read-playback-state'
 
 
-CONFIDENCE_THRESHOLD = 0.0
+CONFIDENCE_THRESHOLD = 0.3
 
 class Song:
 	'''
@@ -38,6 +38,8 @@ class Song:
 		self.beats = []
 		self.sections = []
 
+		self.bars = []
+
 		data = self.sp.audio_analysis(self.track)
 
 		# sort through beats, eliminate under-confident beats
@@ -46,10 +48,18 @@ class Song:
 				self.beats.append((b['start'], b['duration']))
 
 		for s in data['sections']:
-			if s['confidence'] > CONFIDENCE_THRESHOLD:
+			# sections threshold must be 0 for progress bar to render correctly
+
+			if s['confidence'] > 0:
 				self.sections.append((s['start'], s['duration']))
 
-		print('loaded song')
+		for b in data['bars']:
+			if b['confidence'] > CONFIDENCE_THRESHOLD:
+				self.bars.append((b['start'], b['duration']))
+
+		#print('loaded song')
+
+		print(data['bars'])
 
 	def get_sections(self):
 		return self.sections
@@ -68,10 +78,24 @@ class Song:
 			if self.beats[i][0] > time:
 				break
 
-		print( min(time - self.beats[i-1][0], self.beats[i][0] - time))
 
 		# return true is close enough to beat directly before or after
 		return abs(time - self.beats[i-1][0]) < threshold or abs(time-self.beats[i][0]) < threshold
+
+
+	def on_bar(self, time, threshold):
+		'''
+		params: current time and slop window threshold (in ms)
+		'''
+		i = 0
+		time = time / 1000
+		for i in range(len(self.bars)):
+			if self.bars[i][0] > time:
+				break
+
+
+		# return true is close enough to beat directly before or after
+		return abs(time - self.bars[i-1][0]) < threshold or abs(time-self.bars[i][0]) < threshold
 
 		
 
@@ -142,10 +166,8 @@ class ProgressBar(InstructionGroup):
 
 			section_length = section[1] * 1000
 			bar_length = self.length * (section_length / self.duration)
-			print(bar_length)
 			bar = Rectangle(pos=(start_pos, self.buffer), size=(bar_length, self.buffer))
 			start_pos += bar_length
-			print(bar)
 			self.add(bar)
 
 		self.add(Color(rgb = (0.4, 0.1, 0.1)))
@@ -162,7 +184,7 @@ class TestWidget(BaseWidget):
 		
 		# Serena's account
 		self.user = User('1235254187')
-
+		#self.user = User('isabelkaspriskie')
 		# will only work for initial song
 		self.sections = self.user.get_current_song().get_sections()
 		self.duration = self.user.get_current_song().duration
@@ -184,6 +206,13 @@ class TestWidget(BaseWidget):
 		progress = self.user.get_progress()
 
 		self.bar.on_update(progress)
+
+		
+		song = self.user.get_current_song()
+		time = self.user.get_time()
+		if song.on_bar(time, 0.1):
+			print("bar", time)
+		
 
 
 
