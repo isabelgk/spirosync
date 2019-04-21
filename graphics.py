@@ -92,6 +92,7 @@ class Character(InstructionGroup):
         self.kill_list = []
 
         self.is_onbeat = False
+        self.last_beat = 0
 
         # Time keeping
         # self.duration = duration
@@ -102,8 +103,6 @@ class Character(InstructionGroup):
     def spacebar(self, time):
         self.time = time
         if self.is_onbeat:
-            for bubble in self.onbeat_bubbles:
-                bubble.on_beat()
             bubble = OnBeatBubble(self.character.cpos, 20, kPalette["teal400"], kSpeed)
             self.add(bubble)
             self.onbeat_bubbles.append(bubble)
@@ -131,11 +130,11 @@ class Character(InstructionGroup):
         for bubble in self.kill_list:
             self.remove(bubble)
 
-        if self.time > 4000:
-            self.is_onbeat = True
+        self.is_onbeat = self.audio.get_current_song().on_bar(self.time, 0.1)
 
-        else:
-            self.is_onbeat = False
+        if self.is_onbeat:
+            for bubble in self.onbeat_bubbles:
+                bubble.on_beat()
 
         for bubble in self.onbeat_bubbles + self.offbeat_bubbles:
             bubble.on_update(self.time)

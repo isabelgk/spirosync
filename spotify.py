@@ -25,7 +25,7 @@ client_secret = '545a451afb794c2f83feb68547182da1'
 scope = 'user-read-currently-playing, user-read-playback-state'
 
 
-CONFIDENCE_THRESHOLD = 0.3
+CONFIDENCE_THRESHOLD = 0.01
 
 class Song:
 	'''

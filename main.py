@@ -9,7 +9,7 @@ class MainWidget(BaseWidget):
     def __init__(self):
         super(MainWidget, self).__init__()
 
-        self.audio = User("isabelkaspriskie")
+        self.audio = User("shann0nduffy")
         self.sections = self.audio.get_current_song().get_sections()
         self.duration = self.audio.get_current_song().duration
 
