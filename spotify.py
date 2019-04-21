@@ -19,7 +19,7 @@ client_id = 'f443660f40d348caa7b717a385341278'
 client_secret = '545a451afb794c2f83feb68547182da1'
 scope = 'user-read-currently-playing, user-read-playback-state'
 
-CONFIDENCE_THRESHOLD = 0.0
+CONFIDENCE_THRESHOLD = 0.01
 
 
 class Song:
@@ -70,7 +70,6 @@ class Song:
 
 class User:
     """Represents data about current user and user playback"""
-
     def __init__(self, username):
         self.username = username
 
@@ -131,10 +130,8 @@ class ProgressBar(InstructionGroup):
 
             section_length = section[1] * 1000
             bar_length = self.length * (section_length / self.duration)
-            print(bar_length)
             bar = Rectangle(pos=(start_pos, self.buffer), size=(bar_length, self.buffer))
             start_pos += bar_length
-            print(bar)
             self.add(bar)
 
         self.add(Color(rgb=(0.4, 0.1, 0.1)))
@@ -149,8 +146,7 @@ class TestWidget(BaseWidget):
     def __init__(self):
         super(TestWidget, self).__init__()
 
-        # Serena's account
-        self.user = User('1235254187')
+        self.user = User('isabelkaspriskie')
 
         # will only work for initial song
         self.sections = self.user.get_current_song().get_sections()

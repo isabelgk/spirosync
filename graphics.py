@@ -19,29 +19,29 @@ from spotify import Song, User
 
 # Constants
 kSpeed = 10000  # pixels/sec
-kPalette = {"red400": (239, 83, 80),
-            "pink400": (236, 64, 122),
-            "purple400": (171, 71, 188),
-            "deep_purple400": (126, 87, 194),
-            "indigo400": (92, 107, 192),
-            "blue400": (66, 165, 245),
-            "light_blue400": (41, 182, 246),
-            "cyan400": (38, 198, 218),
-            "teal400": (38, 166, 154),
-            "green400": (102, 187, 106),
-            "light_green400": (156, 204, 101),
-            "lime400": (212, 225, 87),
-            "yellow400": (255, 238, 88),
-            "amber400": (255, 202, 40),
-            "orange400": (255, 167, 38),
-            "deep_orange400": (255, 112, 67),
-            "brown400": (141, 110, 99),
-            "blue_gray400": (120, 144, 156),
-            "gray50": (250, 250, 250),
-            "gray400": (189, 189, 189),
-            "gray800": (66, 66, 66),
-            "gray900": (33, 33, 33),
-            }  # rgb
+kPalette = {'red400': (0.9372549019607843, 0.3254901960784314, 0.3137254901960784),
+            'pink400': (0.9254901960784314, 0.25098039215686274, 0.47843137254901963),
+            'purple400': (0.6705882352941176, 0.2784313725490196, 0.7372549019607844),
+            'deep_purple400': (0.49411764705882355, 0.3411764705882353, 0.7607843137254902),
+            'indigo400': (0.3607843137254902, 0.4196078431372549, 0.7529411764705882),
+            'blue400': (0.25882352941176473, 0.6470588235294118, 0.9607843137254902),
+            'light_blue400': (0.1607843137254902, 0.7137254901960784, 0.9647058823529412),
+            'cyan400': (0.14901960784313725, 0.7764705882352941, 0.8549019607843137),
+            'teal400': (0.14901960784313725, 0.6509803921568628, 0.6039215686274509),
+            'green400': (0.4, 0.7333333333333333, 0.41568627450980394),
+            'light_green400': (0.611764705882353, 0.8, 0.396078431372549),
+            'lime400': (0.8313725490196079, 0.8823529411764706, 0.3411764705882353),
+            'yellow400': (1.0, 0.9333333333333333, 0.34509803921568627),
+            'amber400': (1.0, 0.792156862745098, 0.1568627450980392),
+            'orange400': (1.0, 0.6549019607843137, 0.14901960784313725),
+            'deep_orange400': (1.0, 0.4392156862745098, 0.2627450980392157),
+            'brown400': (0.5529411764705883, 0.43137254901960786, 0.38823529411764707),
+            'blue_gray400': (0.47058823529411764, 0.5647058823529412, 0.611764705882353),
+            'gray50': (0.9803921568627451, 0.9803921568627451, 0.9803921568627451),
+            'gray400': (0.7411764705882353, 0.7411764705882353, 0.7411764705882353),
+            'gray800': (0.25882352941176473, 0.25882352941176473, 0.25882352941176473),
+            'gray900': (0.12941176470588237, 0.12941176470588237, 0.12941176470588237),
+            }
 
 
 class ProgressBar(InstructionGroup):
@@ -83,7 +83,7 @@ class Character(InstructionGroup):
         self.audio = spotify_player
 
         self.character = CEllipse(cpos=(Window.width*3/4, Window.height/2), csize=(50, 50), sizesegments=20)
-        self.color = Color(*(1, 1, 0))
+        self.color = Color(*kPalette["gray50"])
         self.add(self.color)
         self.add(self.character)
 
@@ -104,11 +104,12 @@ class Character(InstructionGroup):
         if self.is_onbeat:
             for bubble in self.onbeat_bubbles:
                 bubble.on_beat()
-            bubble = OnBeatBubble(self.character.cpos, 20, (1,0,1), kSpeed)
+            bubble = OnBeatBubble(self.character.cpos, 20, kPalette["teal400"], kSpeed)
             self.add(bubble)
             self.onbeat_bubbles.append(bubble)
         else:
-            bubble = OffBeatSpray((self.character.cpos[0]/2, self.character.cpos[1]/2), [(1, 0, 0), (0, 1, 0)],
+            bubble = OffBeatSpray((self.character.cpos[0]/2, self.character.cpos[1]/2),
+                                  [kPalette["yellow400"], kPalette["purple400"]],
                                   animate=False)
             self.add(bubble)
             self.offbeat_bubbles.append(bubble)
@@ -160,7 +161,7 @@ class OnBeatBubble(InstructionGroup):
         self.add(self.color)
 
         # Shape
-        self.dot = CEllipse(cpos=pos, csize = (2*radius, 2*radius), sizesegments=20)
+        self.dot = CEllipse(cpos=pos, csize=(2 * radius, 2 * radius), sizesegments=20)
         self.add(self.dot)
 
         # Animation
@@ -196,7 +197,7 @@ class OnBeatBubble(InstructionGroup):
 
 
 class OffBeatSpray(InstructionGroup):
-    def __init__(self, pos, colors, bound=80, dot_size=5, num_dots=50, animate=False):
+    def __init__(self, pos, colors, bound=30, dot_size=5, num_dots=10, animate=False):
         """
         If the player hits the spacebar off the beat, a spray of dots will be placed onscreen.
         The colors map to the two most prominent pitch classes of that beat.
@@ -230,7 +231,7 @@ class OffBeatSpray(InstructionGroup):
         #       y = y_0 + r * sin(theta)
         self.dots = [CEllipse(cpos=(self.pos[0] + self.bound * random() * np.cos(2 * np.pi * random()),
                                     self.pos[1] + self.bound * random() * np.sin(2 * np.pi * random())),
-                              size=(self.rad, self.rad), segments=8) for i in range(self.num_dots)]
+                              size=(self.rad, self.rad), segments=4) for i in range(self.num_dots)]
 
         for dot in self.dots:
             self.add(Color(*choice(self.colors)))
@@ -256,7 +257,7 @@ class TestWidget(BaseWidget):
         self.spray = OffBeatSpray((300, 300), ((100, 0, 30), (0, 50, 200)), animate=True)
         self.canvas.add(self.spray)
 
-        self.one_bubble = OnBeatBubble((Window.width*3/4,Window.height/2), 20, (1,1,0), 10000)
+        self.one_bubble = OnBeatBubble((Window.width * 3 / 4, Window.height / 2), 20, (1, 1, 0), 10000)
         self.canvas.add(self.one_bubble)
 
         self.time = 0
