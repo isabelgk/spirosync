@@ -9,7 +9,7 @@ class MainWidget(BaseWidget):
     def __init__(self):
         super(MainWidget, self).__init__()
 
-        self.audio = User("isabelkaspriskie")
+        self.audio = User("1235254187")
         self.sections = self.audio.get_current_song().get_sections()
         self.duration = self.audio.get_current_song().duration
 
@@ -26,6 +26,12 @@ class MainWidget(BaseWidget):
         # Static text display
         self.info = topleft_label()
         self.add_widget(self.info)
+
+        self.throttle = 0
+
+        self.time = 0
+        self.progress = 0
+
 
     def on_key_down(self, keycode, modifiers):
         # up/down key will move character
@@ -54,22 +60,37 @@ class MainWidget(BaseWidget):
     def on_update(self):
         # call Character onupdate
 
-        progress = self.audio.get_progress()
-        time = self.audio.get_time()
+        fps = 0
+        if self.throttle == 60:
+            self.progress = self.audio.get_progress()
+            self.time = self.audio.get_time()
+            self.throttle = 0
+        else:
+            fps = kivyClock.get_fps()
+            if fps == 0:
+                fps = 60
+            self.time += ( 1/fps * 1000)
+            self.progress = self.time / self.audio.current_track.duration
+            self.throttle += 1
+
+        print(self.time)
 
         self.info.text = ''
-        self.info.text += '%s' % str(self.character.character.cpos)
+        self.info.text += '%s\n' % str(self.character.character.cpos)
+        self.info.text += str(self.time) + '\n'
+        self.info.text += str(fps)
 
         if self.is_up:
             self.character.on_up_press()
         if self.is_down:
             self.character.on_down_press()
         if self.spacebar_down:
-            self.character.spacebar(time)
+            self.character.spacebar(self.time)
 
-        self.character.on_update(time)
 
-        self.bar.on_update(progress)
+        self.character.on_update(self.time)
+
+        self.bar.on_update(self.progress)
 
 
 if __name__ == "__main__":
