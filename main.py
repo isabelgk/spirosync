@@ -73,8 +73,6 @@ class MainWidget(BaseWidget):
             self.progress = self.time / self.audio.current_track.duration
             self.throttle += 1
 
-        print(self.time)
-
         self.info.text = ''
         self.info.text += '%s\n' % str(self.character.character.cpos)
         self.info.text += str(self.time) + '\n'

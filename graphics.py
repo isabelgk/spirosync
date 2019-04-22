@@ -18,7 +18,7 @@ from random import random, choice
 from spotify import Song, User
 
 # Constants
-kSpeed = 10000  # pixels/sec
+kSpeed = 5000  # pixels/sec
 kPalette = {'red400': (0.9372549019607843, 0.3254901960784314, 0.3137254901960784),
             'pink400': (0.9254901960784314, 0.25098039215686274, 0.47843137254901963),
             'purple400': (0.6705882352941176, 0.2784313725490196, 0.7372549019607844),
@@ -87,12 +87,14 @@ class Character(InstructionGroup):
         self.add(self.color)
         self.add(self.character)
 
-        self.onbeat_bubbles = []
-        self.offbeat_bubbles = []
-        self.kill_list = []
+        self.onbeat_bubbles = set()
+        self.offbeat_bubbles = set()
+        self.kill_list = set()
 
         self.is_onbeat = False
         self.last_beat = 0
+        # count the number of iterations that have been on beat
+        self.num_beats = 0
 
         # Time keeping
         # self.duration = duration
@@ -105,16 +107,16 @@ class Character(InstructionGroup):
 
     def spacebar(self, time):
         self.time = time
-        if self.is_onbeat:
+        if self.is_onbeat and self.num_beats == 1:
             bubble = OnBeatBubble(self.character.cpos, 20, kPalette["teal400"], kSpeed)
             self.add(bubble)
-            self.onbeat_bubbles.append(bubble)
+            self.onbeat_bubbles.add(bubble)
         else:
             bubble = OffBeatSpray((self.character.cpos[0]/2, self.character.cpos[1]/2),
                                   [kPalette["yellow400"], kPalette["purple400"]],
                                   animate=False)
             self.add(bubble)
-            self.offbeat_bubbles.append(bubble)
+            self.offbeat_bubbles.add(bubble)
 
     def on_up_press(self):
         current_pos = self.character.cpos
@@ -135,28 +137,30 @@ class Character(InstructionGroup):
                 self.onbeat_bubbles.remove(bubble)
             elif bubble in self.offbeat_bubbles:
                 self.offbeat_bubbles.remove(bubble)
-            else:
-                print(bubble)
-                print()
             self.remove(bubble)
             self.kill_list.remove(bubble)
 
         self.is_onbeat = self.audio.get_current_song().on_bar(self.time, 0.1)
 
         if self.is_onbeat:
+            self.num_beats += 1
+        else:
+            self.num_beats = 0
+
+        if self.is_onbeat:
             for bubble in self.onbeat_bubbles:
                 bubble.on_beat()
 
-        for bubble in self.onbeat_bubbles + self.offbeat_bubbles:
+        for bubble in self.onbeat_bubbles | self.offbeat_bubbles:
             bubble.on_update(self.time)
 
         for bubble in self.onbeat_bubbles:
             if bubble.dot.cpos[0] < -20 and bubble not in self.onbeat_bubbles:
-                self.kill_list.append(bubble)
+                self.kill_list.add(bubble)
 
         for bubble in self.offbeat_bubbles:
             if bubble.translate.x < -Window.width/2 and bubble not in self.offbeat_bubbles:
-                self.kill_list.append(bubble)
+                self.kill_list.add(bubble)
 
 
 class OnBeatBubble(InstructionGroup):
