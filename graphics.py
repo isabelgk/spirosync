@@ -50,7 +50,7 @@ class ProgressBar(InstructionGroup):
     def __init__(self, sections, duration):
         super(ProgressBar, self).__init__()
 
-        self.add(Color(rgb=(0.2, 0.8, 0.5)))
+        self.add(Color(rgb=kPalette['gray400']))
         self.length = Window.width * 0.9
         self.buffer = Window.width * 0.05
 
@@ -59,7 +59,12 @@ class ProgressBar(InstructionGroup):
 
         start_pos = self.buffer
         for section in self.sections:
-            self.add(Color(rgb=(0.2, random.random(), 0.5)))
+
+            # For now, use a random color for the section.
+            colors = list(kPalette.values())
+            colors.remove(kPalette['gray50'])  # Save light gray for the progress mark.
+            color = Color(rgb=choice(colors))
+            self.add(color)
 
             section_length = section[1] * 1000
             bar_length = self.length * (section_length / self.duration)
@@ -67,7 +72,8 @@ class ProgressBar(InstructionGroup):
             start_pos += bar_length
             self.add(bar)
 
-        self.add(Color(rgb=(0.4, 0.1, 0.1)))
+        # Add a red progress mark.
+        self.add(Color(rgb=kPalette['gray50']))
         self.progress_mark = Rectangle(pos=(self.buffer, self.buffer), size=(self.buffer / 10, self.buffer))
         self.add(self.progress_mark)
 
@@ -108,13 +114,13 @@ class Character(InstructionGroup):
     def spacebar(self, time):
         self.time = time
         if self.is_onbeat and self.num_beats == 1:
-            bubble = OnBeatBubble(self.character.cpos, 20, kPalette["teal400"], kSpeed)
+            bubble = OnBeatBubble(self.character.cpos, 20, kPalette["red400"], kSpeed)
             self.add(bubble)
             self.onbeat_bubbles.add(bubble)
         else:
             bubble = OffBeatSpray((self.character.cpos[0]/2, self.character.cpos[1]/2),
-                                  [kPalette["yellow400"], kPalette["purple400"]],
-                                  animate=False)
+                                  [kPalette["orange400"], kPalette["yellow400"]],
+                                  animate=True)
             self.add(bubble)
             self.offbeat_bubbles.add(bubble)
 

@@ -151,7 +151,7 @@ class User:
             return True
 
 
-class ProgressBar(InstructionGroup):
+class ProgressBarTest(InstructionGroup):
     """Graphics representing progress bar. Animates the fraction of the song that has played"""
 
     def __init__(self, sections, duration):
@@ -193,7 +193,7 @@ class TestWidget(BaseWidget):
         self.sections = self.user.get_current_track().get_sections()
         self.duration = self.user.get_current_track().duration
 
-        self.bar = ProgressBar(self.sections, self.duration)
+        self.bar = ProgressBarTest(self.sections, self.duration)
         self.canvas.add(self.bar)
 
     def on_key_down(self, keycode, modifiers):
