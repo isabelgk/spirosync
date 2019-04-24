@@ -13,7 +13,7 @@ from kivy.graphics.instructions import InstructionGroup
 from kivy.graphics import Color, Ellipse, Rectangle, Line
 from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
 
-from random import random, choice
+from random import random, choice, randint
 
 from spotify import Song, User
 
@@ -108,9 +108,6 @@ class Character(InstructionGroup):
         self.time = 0
         self.on_update(0)
 
-    def get_num_objects(self):
-        return len(self.onbeat_bubbles + self.offbeat_bubbles)
-
     def spacebar(self, time):
         self.time = time
         if self.is_onbeat and self.num_beats == 1:
@@ -119,7 +116,7 @@ class Character(InstructionGroup):
             self.onbeat_bubbles.add(bubble)
         else:
             bubble = OffBeatSpray((self.character.cpos[0]/2, self.character.cpos[1]/2),
-                                  [kPalette["orange400"], kPalette["yellow400"]],
+                                  [kPalette["orange400"], kPalette["yellow400"]], bound=randint(10, 80),
                                   animate=True)
             self.add(bubble)
             self.offbeat_bubbles.add(bubble)
@@ -196,9 +193,6 @@ class OnBeatBubble(InstructionGroup):
         self.beat_anim = KFAnim((self.time, self.radius), (self.time+0.1, 2*self.radius))
 
     def on_update(self, time):
-        # rad = self.radius_anim.eval(self.time)
-        # self.dot.csize = 2*rad, 2*rad
-
         self.dot.cpos = (self.dot.cpos[0] - 10, self.dot.cpos[1])
 
         if self.beat_anim is not None:
@@ -212,11 +206,10 @@ class OnBeatBubble(InstructionGroup):
                 self.shrink = False
 
         self.time = time
-        # return self.radius_anim.is_active(self.time)
 
 
 class OffBeatSpray(InstructionGroup):
-    def __init__(self, pos, colors, bound=30, dot_size=5, num_dots=10, animate=False):
+    def __init__(self, pos, colors, bound=50, dot_size=5, num_dots=10, animate=False):
         """
         If the player hits the spacebar off the beat, a spray of dots will be placed onscreen.
         The colors map to the two most prominent pitch classes of that beat.

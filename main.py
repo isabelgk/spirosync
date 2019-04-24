@@ -66,18 +66,20 @@ class MainWidget(BaseWidget):
         # call Character onupdate
         # if self.audio.is_playing():
 
-        fps = 0
-        if self.throttle == 60:
-            self.progress = self.audio.get_progress()
+        self.progress = self.time / self.audio.current_track.duration
+        fps = kivyClock.get_fps()
+        # fps = 0
+        # if self.throttle == 60:
+            # self.progress = self.audio.get_progress()
             # self.time = self.audio.get_time()
-            self.throttle = 0
-        else:
-            fps = kivyClock.get_fps()
-            if fps == 0:
-                fps = 60
+            # self.throttle = 0
+        # else:
+        #     fps = kivyClock.get_fps()
+        #     if fps == 0:
+        #         fps = 60
             # self.time += (1/fps * 1000)
-            self.progress = self.time / self.audio.current_track.duration
-            self.throttle += 1
+            # self.progress = self.time / self.audio.current_track.duration
+            # self.throttle += 1
 
         self.time += kivyClock.frametime * 1000
 
