@@ -9,9 +9,14 @@ class MainWidget(BaseWidget):
     def __init__(self):
         super(MainWidget, self).__init__()
 
-        self.audio = User("shann0nduffy")
-        self.sections = self.audio.get_current_song().get_sections()
-        self.duration = self.audio.get_current_song().duration
+        #self.audio = User("shann0nduffy")
+
+        # Serena's account
+        self.user = User('1235254187')
+
+        self.audio = User("1235254187")
+        self.sections = self.audio.get_current_track().get_sections()
+        self.duration = self.audio.get_current_track().duration
 
         self.bar = ProgressBar(self.sections, self.duration)
         self.canvas.add(self.bar)

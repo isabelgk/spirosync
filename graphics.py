@@ -140,7 +140,7 @@ class Character(InstructionGroup):
             self.remove(bubble)
             self.kill_list.remove(bubble)
 
-        self.is_onbeat = self.audio.get_current_song().on_bar(self.time, 0.1)
+        self.is_onbeat = self.audio.get_current_track().on_beat(self.time, 0.1)
 
         if self.is_onbeat:
             self.num_beats += 1

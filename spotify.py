@@ -129,7 +129,7 @@ class User:
 	def get_token(self):
 		return self.token
 
-	def get_current_song(self):
+	def get_current_track(self):
 		return self.current_track
 
 	def get_time(self):
@@ -186,8 +186,8 @@ class TestWidget(BaseWidget):
 		self.user = User('1235254187')
 		#self.user = User('isabelkaspriskie')
 		# will only work for initial song
-		self.sections = self.user.get_current_song().get_sections()
-		self.duration = self.user.get_current_song().duration
+		self.sections = self.user.get_current_track().get_sections()
+		self.duration = self.user.get_current_track().duration
 
 		self.bar = ProgressBar(self.sections, self.duration)
 		self.canvas.add(self.bar)
@@ -196,7 +196,7 @@ class TestWidget(BaseWidget):
 
 		# test on_beat function
 		if keycode[1] == 'a':
-			song = self.user.get_current_song()
+			song = self.user.get_current_track()
 			time = self.user.get_time()
 			print(time, song.on_beat(time, 0.2))
 
@@ -208,7 +208,7 @@ class TestWidget(BaseWidget):
 		self.bar.on_update(progress)
 
 		
-		song = self.user.get_current_song()
+		song = self.user.get_current_track()
 		time = self.user.get_time()
 		if song.on_bar(time, 0.1):
 			print("bar", time)
