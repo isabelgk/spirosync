@@ -12,9 +12,9 @@ class MainWidget(BaseWidget):
         #self.audio = User("shann0nduffy")
 
         # Serena's account
-        # self.user = User('1235254187')
+        self.audio = User('1235254187')
 
-        self.audio = User("isabelkaspriskie")
+        #self.audio = User("isabelkaspriskie")
         self.sections = self.audio.get_current_track().get_sections()
         self.duration = self.audio.get_current_track().duration
 
@@ -89,7 +89,9 @@ class MainWidget(BaseWidget):
         self.info.text += 'offbeat: %d\n' % len(self.character.offbeat_bubbles)
         self.info.text += 'onbeat: %d\n' % len(self.character.onbeat_bubbles)
         self.info.text += 'kill: %d\n' % len(self.character.kill_list)
-        self.info.text += 'progress: %.2f' % self.progress
+        self.info.text += 'progress: %.2f \n' % self.progress
+        self.info.text += 'song name: ' + self.audio.get_song_name() + '\n'
+        self.info.text += 'artists: ' + str(self.audio.get_artists()) + '\n'
 
         if self.is_up:
             self.character.on_up_press()

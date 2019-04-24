@@ -111,12 +111,24 @@ class User:
 
         self.current_track = None
         self.current_playback_data = self.sp.current_playback()
+
+        self.artists = []
+        self.song_name = ""
+
         if self.current_playback_data:
             # make song object for song currently playing
             # for now, switching songs will not update the beats so use one song while testing
             self.current_track = Song(self.sp, self.current_playback_data['item']['id'],
                                       self.current_playback_data['item']['duration_ms'])
+            self.song_name = self.current_playback_data['item']['name']
+            for artist in self.current_playback_data['item']['artists']:
+            	self.artists.append(artist['name'])
+    def get_song_name(self):
+    	return self.song_name
 
+    def get_artists(self):
+    	return self.artists
+    	
     def get_spotify(self):
         return self.sp
 
