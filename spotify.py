@@ -4,6 +4,7 @@ import spotipy
 import spotipy.util as util
 
 import sys
+
 sys.path.append('..')
 from common.core import *
 from common.gfxutil import *
@@ -18,218 +19,191 @@ from kivy.graphics import Color, Rectangle
 
 import random
 
-
 # harded coded values for spotify app
 client_id = 'f443660f40d348caa7b717a385341278'
 client_secret = '545a451afb794c2f83feb68547182da1'
 scope = 'user-read-currently-playing, user-read-playback-state'
 
-
 CONFIDENCE_THRESHOLD = 0.01
 
+
 class Song:
-	'''
-	Runs audio analysis on given song
-	'''
-	def __init__(self, spotify, track, duration):
-		self.track = track
-		self.sp = spotify
-		self.duration = duration
-		self.beats = []
-		self.sections = []
+    """Runs audio analysis on given song"""
 
-		self.bars = []
+    def __init__(self, spotify, track, duration):
+        self.track = track
+        self.sp = spotify
+        self.duration = duration
+        self.beats = []
+        self.sections = []
 
-		data = self.sp.audio_analysis(self.track)
+        self.bars = []
 
-		# sort through beats, eliminate under-confident beats
-		for b in data['beats']:
-			if b['confidence'] > CONFIDENCE_THRESHOLD:
-				self.beats.append((b['start'], b['duration']))
+        data = self.sp.audio_analysis(self.track)
 
-		for s in data['sections']:
-			# sections threshold must be 0 for progress bar to render correctly
+        # sort through beats, eliminate under-confident beats
+        for b in data['beats']:
+            if b['confidence'] > CONFIDENCE_THRESHOLD:
+                self.beats.append((b['start'], b['duration']))
 
-			if s['confidence'] > 0:
-				self.sections.append((s['start'], s['duration']))
+        for s in data['sections']:
+            # sections threshold must be 0 for progress bar to render correctly
 
-		for b in data['bars']:
-			if b['confidence'] > CONFIDENCE_THRESHOLD:
-				self.bars.append((b['start'], b['duration']))
+            if s['confidence'] > 0:
+                self.sections.append((s['start'], s['duration']))
 
-		#print('loaded song')
+        for b in data['bars']:
+            if b['confidence'] > CONFIDENCE_THRESHOLD:
+                self.bars.append((b['start'], b['duration']))
 
-		print(data['bars'])
+        # print('loaded song')
 
-	def get_sections(self):
-		return self.sections
+        print(data['bars'])
 
-	def get_beats(self):
-		return self.beats
+    def get_sections(self):
+        return self.sections
 
+    def get_beats(self):
+        return self.beats
 
-	def on_beat(self, time, threshold):
-		'''
-		params: current time and slop window threshold (in ms)
-		'''
-		i = 0
-		time = time / 1000
-		for i in range(len(self.beats)):
-			if self.beats[i][0] > time:
-				break
+    def on_beat(self, time, threshold):
+        """
+        :param time: Current time in ms
+        :param threshold: Slop window threshold (in ms)
+        :return: True if on a beat timestamp within threshold, False otherwise
+        """
+        i = 0
+        time /= 1000  # to milliseconds
+        for i in range(len(self.beats)):
+            if self.beats[i][0] > time:
+                break
 
+        # return True is close enough to beat directly before or after
+        return abs(time - self.beats[i - 1][0]) < threshold or abs(time - self.beats[i][0]) < threshold
 
-		# return true is close enough to beat directly before or after
-		return abs(time - self.beats[i-1][0]) < threshold or abs(time-self.beats[i][0]) < threshold
+    def on_bar(self, time, threshold):
+        """
+        :param time: Current time in ms
+        :param threshold: Slop window threshold in ms
+        :return: True if on a bar timestamp within threshold, False otherwise
+        """
+        i = 0
+        time = time / 1000
+        for i in range(len(self.bars)):
+            if self.bars[i][0] > time:
+                break
 
-
-	def on_bar(self, time, threshold):
-		'''
-		params: current time and slop window threshold (in ms)
-		'''
-		i = 0
-		time = time / 1000
-		for i in range(len(self.bars)):
-			if self.bars[i][0] > time:
-				break
-
-
-		# return true is close enough to beat directly before or after
-		return abs(time - self.bars[i-1][0]) < threshold or abs(time-self.bars[i][0]) < threshold
-
-		
-
-
-
+        # return true is close enough to beat directly before or after
+        return abs(time - self.bars[i - 1][0]) < threshold or abs(time - self.bars[i][0]) < threshold
 
 
 class User:
-	'''
-	Represents data about current user and user playback 
-	'''
-	def __init__(self, username):
-		self.username = username
+    """Represents data about current user and user playback."""
 
-		# unique token for each account
-		self.token = util.prompt_for_user_token(self.username,scope,client_id=client_id,client_secret=client_secret,redirect_uri="https://www.spotify.com/us/")
+    def __init__(self, username):
+        self.username = username
 
-		self.sp = spotipy.Spotify(auth=self.token)
+        # unique token for each account
+        self.token = util.prompt_for_user_token(self.username, scope, client_id=client_id, client_secret=client_secret,
+                                                redirect_uri="https://www.spotify.com/us/")
 
-		self.current_track = None
-		self.current_playback_data = self.sp.current_playback()
-		if self.current_playback_data:
-			# make song object for song currently playing
-			# for now, switching songs will not update the beats so use one song while testing
-			self.current_track = Song(self.sp, self.current_playback_data['item']['id'], self.current_playback_data['item']['duration_ms'])
+        self.sp = spotipy.Spotify(auth=self.token)
 
+        self.current_track = None
+        self.current_playback_data = self.sp.current_playback()
+        if self.current_playback_data:
+            # make song object for song currently playing
+            # for now, switching songs will not update the beats so use one song while testing
+            self.current_track = Song(self.sp, self.current_playback_data['item']['id'],
+                                      self.current_playback_data['item']['duration_ms'])
 
-	def get_spotify(self):
-		return self.sp
+    def get_spotify(self):
+        return self.sp
 
-	def get_token(self):
-		return self.token
+    def get_token(self):
+        return self.token
 
-	def get_current_track(self):
-		return self.current_track
+    def get_current_track(self):
+        return self.current_track
 
-	def get_time(self):
-		# get progress_ms
-		playback = self.sp.current_playback()
-		if playback:
-			return playback['progress_ms']
+    def get_time(self):
+        # get progress_ms
+        playback = self.sp.current_playback()
+        if playback:
+            return playback['progress_ms']
 
-	def get_progress(self):	
-		# get fraction of song that has played	
-		progress = self.get_time()
-		if progress:
-			return progress / self.current_track.duration 
-		else:
-			return 0
+    def get_progress(self):
+        # get fraction of song that has played
+        progress = self.get_time()
+        if progress:
+            return progress / self.current_track.duration
+        else:
+            return 0
+
 
 class ProgressBar(InstructionGroup):
-	'''
-	Graphics represnting progress bar. Animates the fraction of the song that has played
-	'''
-	def __init__(self, sections, duration):
-		super(ProgressBar, self).__init__()
+    """Graphics representing progress bar. Animates the fraction of the song that has played"""
 
-		self.add(Color(rgb=(0.2, 0.8, 0.5)))
-		self.length = Window.width * 0.9
-		self.buffer = Window.width * 0.05
+    def __init__(self, sections, duration):
+        super(ProgressBar, self).__init__()
 
-		self.sections = sections
-		self.duration = duration
+        self.add(Color(rgb=(0.2, 0.8, 0.5)))
+        self.length = Window.width * 0.9
+        self.buffer = Window.width * 0.05
 
-		start_pos = self.buffer
-		for section in self.sections:
-			self.add(Color(rgb = (0.2, random.random(), 0.5)))
+        self.sections = sections
+        self.duration = duration
 
-			section_length = section[1] * 1000
-			bar_length = self.length * (section_length / self.duration)
-			bar = Rectangle(pos=(start_pos, self.buffer), size=(bar_length, self.buffer))
-			start_pos += bar_length
-			self.add(bar)
+        start_pos = self.buffer
+        for section in self.sections:
+            self.add(Color(rgb=(0.2, random.random(), 0.5)))
 
-		self.add(Color(rgb = (0.4, 0.1, 0.1)))
-		self.progress_mark = Rectangle(pos=(self.buffer,self.buffer), size=(self.buffer/10, self.buffer))
-		self.add(self.progress_mark)
+            section_length = section[1] * 1000
+            bar_length = self.length * (section_length / self.duration)
+            bar = Rectangle(pos=(start_pos, self.buffer), size=(bar_length, self.buffer))
+            start_pos += bar_length
+            self.add(bar)
 
-	def on_update(self, progress):
-		self.progress_mark.pos = ((self.length * progress) + self.buffer, self.buffer)
+        self.add(Color(rgb=(0.4, 0.1, 0.1)))
+        self.progress_mark = Rectangle(pos=(self.buffer, self.buffer), size=(self.buffer / 10, self.buffer))
+        self.add(self.progress_mark)
+
+    def on_update(self, progress):
+        self.progress_mark.pos = ((self.length * progress) + self.buffer, self.buffer)
 
 
 class TestWidget(BaseWidget):
-	def __init__(self):
-		super(TestWidget, self).__init__()
-		
-		# Serena's account
-		self.user = User('1235254187')
-		#self.user = User('isabelkaspriskie')
-		# will only work for initial song
-		self.sections = self.user.get_current_track().get_sections()
-		self.duration = self.user.get_current_track().duration
+    def __init__(self):
+        super(TestWidget, self).__init__()
 
-		self.bar = ProgressBar(self.sections, self.duration)
-		self.canvas.add(self.bar)
- 
-	def on_key_down(self, keycode, modifiers):
+        # Serena's account
+        self.user = User('1235254187')
+        # self.user = User('isabelkaspriskie')
+        # will only work for initial song
+        self.sections = self.user.get_current_track().get_sections()
+        self.duration = self.user.get_current_track().duration
 
-		# test on_beat function
-		if keycode[1] == 'a':
-			song = self.user.get_current_track()
-			time = self.user.get_time()
-			print(time, song.on_beat(time, 0.2))
+        self.bar = ProgressBar(self.sections, self.duration)
+        self.canvas.add(self.bar)
 
+    def on_key_down(self, keycode, modifiers):
 
+        # test on_beat function
+        if keycode[1] == 'a':
+            song = self.user.get_current_track()
+            time = self.user.get_time()
+            print(time, song.on_beat(time, 0.2))
 
-	def on_update(self):
-		progress = self.user.get_progress()
+    def on_update(self):
+        progress = self.user.get_progress()
 
-		self.bar.on_update(progress)
+        self.bar.on_update(progress)
 
-		
-		song = self.user.get_current_track()
-		time = self.user.get_time()
-		if song.on_bar(time, 0.1):
-			print("bar", time)
-		
-
-
-
-
-
-
-
-		
-
-
+        song = self.user.get_current_track()
+        time = self.user.get_time()
+        if song.on_bar(time, 0.1):
+            print("bar", time)
 
 
 if __name__ == '__main__':
-	run(TestWidget)
-
-
-
-
-
-
+    run(TestWidget)
