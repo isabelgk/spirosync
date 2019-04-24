@@ -140,6 +140,16 @@ class User:
         else:
             return 0
 
+    def is_playing(self):
+        """
+
+        :return: True if a song is playing, False if not (e.g. paused song)
+        """
+        if self.sp.current_playback() is None:
+            return False
+        else:
+            return True
+
 
 class ProgressBar(InstructionGroup):
     """Graphics representing progress bar. Animates the fraction of the song that has played"""

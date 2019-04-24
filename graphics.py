@@ -138,7 +138,7 @@ class Character(InstructionGroup):
             elif bubble in self.offbeat_bubbles:
                 self.offbeat_bubbles.remove(bubble)
             self.remove(bubble)
-            self.kill_list.remove(bubble)
+        self.kill_list.clear()
 
         self.is_onbeat = self.audio.get_current_track().on_beat(self.time, 0.1)
 
@@ -159,7 +159,7 @@ class Character(InstructionGroup):
                 self.kill_list.add(bubble)
 
         for bubble in self.offbeat_bubbles:
-            if bubble.translate.x < -Window.width/2 and bubble not in self.offbeat_bubbles:
+            if bubble.translate.x < -Window.width/2:
                 self.kill_list.add(bubble)
 
 

@@ -12,9 +12,9 @@ class MainWidget(BaseWidget):
         #self.audio = User("shann0nduffy")
 
         # Serena's account
-        self.user = User('1235254187')
+        # self.user = User('1235254187')
 
-        self.audio = User("1235254187")
+        self.audio = User("isabelkaspriskie")
         self.sections = self.audio.get_current_track().get_sections()
         self.duration = self.audio.get_current_track().duration
 
@@ -34,9 +34,9 @@ class MainWidget(BaseWidget):
 
         self.throttle = 0
 
-        self.time = 0
-        self.progress = 0
-
+        self.time = self.audio.get_time()  # Song position in ms
+        self.progress = 0  # Song position in percent completion
+        self.spotify_playing = self.audio.is_playing()  # Flag on whether Spotify is playing a song or not
 
     def on_key_down(self, keycode, modifiers):
         # up/down key will move character
@@ -64,24 +64,25 @@ class MainWidget(BaseWidget):
 
     def on_update(self):
         # call Character onupdate
+        # if self.audio.is_playing():
+        self.time += kivyClock.frametime
 
         fps = 0
         if self.throttle == 60:
             self.progress = self.audio.get_progress()
-            self.time = self.audio.get_time()
+            # self.time = self.audio.get_time()
             self.throttle = 0
         else:
             fps = kivyClock.get_fps()
             if fps == 0:
                 fps = 60
-            self.time += (1/fps * 1000)
+            # self.time += (1/fps * 1000)
             self.progress = self.time / self.audio.current_track.duration
             self.throttle += 1
 
         self.info.text = ''
-        self.info.text += '%s\n' % str(self.character.character.cpos)
-        self.info.text += str(self.time) + '\n'
-        self.info.text += str(fps) + '\n'
+        self.info.text += 'time: %.2f\n' % self.time
+        self.info.text += 'fps: %.2f\n' % fps
         self.info.text += 'offbeat: %d\n' % len(self.character.offbeat_bubbles)
         self.info.text += 'onbeat: %d\n' % len(self.character.onbeat_bubbles)
         self.info.text += 'kill: %d' % len(self.character.kill_list)
