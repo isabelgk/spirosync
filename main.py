@@ -65,7 +65,6 @@ class MainWidget(BaseWidget):
     def on_update(self):
         # call Character onupdate
         # if self.audio.is_playing():
-        self.time += kivyClock.frametime
 
         fps = 0
         if self.throttle == 60:
@@ -80,12 +79,15 @@ class MainWidget(BaseWidget):
             self.progress = self.time / self.audio.current_track.duration
             self.throttle += 1
 
+        self.time += kivyClock.frametime * 1000
+
         self.info.text = ''
         self.info.text += 'time: %.2f\n' % self.time
         self.info.text += 'fps: %.2f\n' % fps
         self.info.text += 'offbeat: %d\n' % len(self.character.offbeat_bubbles)
         self.info.text += 'onbeat: %d\n' % len(self.character.onbeat_bubbles)
-        self.info.text += 'kill: %d' % len(self.character.kill_list)
+        self.info.text += 'kill: %d\n' % len(self.character.kill_list)
+        self.info.text += 'progress: %.2f' % self.progress
 
         if self.is_up:
             self.character.on_up_press()

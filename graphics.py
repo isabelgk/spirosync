@@ -131,7 +131,6 @@ class Character(InstructionGroup):
     def on_update(self, time):
         self.time = time
 
-        #if self.audio.is_onbeat():
         for bubble in self.kill_list:
             if bubble in self.onbeat_bubbles:
                 self.onbeat_bubbles.remove(bubble)
@@ -155,7 +154,7 @@ class Character(InstructionGroup):
             bubble.on_update(self.time)
 
         for bubble in self.onbeat_bubbles:
-            if bubble.dot.cpos[0] < -20 and bubble not in self.onbeat_bubbles:
+            if bubble.dot.cpos[0] < -20:
                 self.kill_list.add(bubble)
 
         for bubble in self.offbeat_bubbles:
