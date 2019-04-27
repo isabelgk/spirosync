@@ -34,6 +34,7 @@ class Song:
         self.track = track
         self.sp = spotify
         self.duration = duration
+        self.segments = []
         self.beats = []
         self.sections = []
 
@@ -50,11 +51,15 @@ class Song:
             # sections threshold must be 0 for progress bar to render correctly
 
             if s['confidence'] > 0:
-                self.sections.append((s['start'], s['duration']))
+                self.sections.append(s)
 
         for b in data['bars']:
             if b['confidence'] > CONFIDENCE_THRESHOLD:
                 self.bars.append((b['start'], b['duration']))
+
+        for s in data['segments']:
+            if s['confidence'] > CONFIDENCE_THRESHOLD:
+                self.segments.append(s)
 
         # print('loaded song')
 
@@ -65,6 +70,8 @@ class Song:
 
     def get_beats(self):
         return self.beats
+
+
 
     def on_beat(self, time, threshold):
         """
@@ -97,7 +104,7 @@ class Song:
         return abs(time - self.bars[i - 1][0]) < threshold or abs(time - self.bars[i][0]) < threshold
 
 
-class User:
+class Audio:
     """Represents data about current user and user playback."""
 
     def __init__(self, username):
@@ -167,7 +174,7 @@ class ProgressBarTest(InstructionGroup):
     """Graphics representing progress bar. Animates the fraction of the song that has played"""
 
     def __init__(self, sections, duration):
-        super(ProgressBar, self).__init__()
+        super(ProgressBarTest, self).__init__()
 
         self.add(Color(rgb=(0.2, 0.8, 0.5)))
         self.length = Window.width * 0.9
@@ -180,7 +187,7 @@ class ProgressBarTest(InstructionGroup):
         for section in self.sections:
             self.add(Color(rgb=(0.2, random.random(), 0.5)))
 
-            section_length = section[1] * 1000
+            section_length = section['duration'] * 1000
             bar_length = self.length * (section_length / self.duration)
             bar = Rectangle(pos=(start_pos, self.buffer), size=(bar_length, self.buffer))
             start_pos += bar_length
@@ -199,7 +206,7 @@ class TestWidget(BaseWidget):
         super(TestWidget, self).__init__()
 
         # Serena's account
-        self.user = User('1235254187')
+        self.user = Audio("shann0nduffy")
         # self.user = User('isabelkaspriskie')
         # will only work for initial song
         self.sections = self.user.get_current_track().get_sections()

@@ -4,15 +4,16 @@ sys.path.append('..')
 from graphics import *
 from spotify import *
 
+# https://developer.spotify.com/documentation/web-api/reference/tracks/get-audio-analysis/#timbre
 
 class MainWidget(BaseWidget):
     def __init__(self):
         super(MainWidget, self).__init__()
 
-        #self.audio = User("shann0nduffy")
+        self.audio = Audio("shann0nduffy")
 
         # Serena's account
-        self.audio = User('1235254187')
+        # self.audio = User('1235254187')
 
         #self.audio = User("isabelkaspriskie")
         self.sections = self.audio.get_current_track().get_sections()

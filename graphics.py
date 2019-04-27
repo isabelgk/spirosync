@@ -66,7 +66,7 @@ class ProgressBar(InstructionGroup):
             color = Color(rgb=choice(colors))
             self.add(color)
 
-            section_length = section[1] * 1000
+            section_length = section['duration'] * 1000
             bar_length = self.length * (section_length / self.duration)
             bar = Rectangle(pos=(start_pos, self.buffer), size=(bar_length, self.buffer))
             start_pos += bar_length
@@ -80,18 +80,36 @@ class ProgressBar(InstructionGroup):
     def on_update(self, progress):
         self.progress_mark.pos = ((self.length * progress) + self.buffer, self.buffer)
 
+class PulsingBar(InstructionGroup):
+    def __init__(self):
+        pass
 
-class Character(InstructionGroup):
+    def on_beat(self):
+        pass
+
+    def on_segment(self, data)
+        # data gives loudness_start, loudness_max_tim, loudness_max, loudness_end, pitches, timbre
+        pass
+
+    def on_tatum(self):
+        pass
+
+    def on_update(self, time):
+        pass
+
+class User(InstructionGroup):
     """Character draws the character, handles audio data, and draws bubbles behind the character"""
-    def __init__(self, spotify_song=None):
+    def __init__(self, spotify_song):
         super().__init__()
 
         self.audio = spotify_song
 
-        self.character = CEllipse(cpos=(Window.width*3/4, Window.height/2), csize=(50, 50), sizesegments=20)
-        self.color = Color(*kPalette["gray50"])
-        self.add(self.color)
-        self.add(self.character)
+        # index for current mode
+        self.current_mode = 0
+        # the mode for each section
+        self.section_modes = [int(random() * 3) for i in range(len(self.audio.get_current_track.get_sections()))]
+        # list of all modes
+        self.modes = [PulsingBar, Tunnel, SpectralBars]
 
         self.onbeat_bubbles = set()
         self.offbeat_bubbles = set()
@@ -134,14 +152,6 @@ class Character(InstructionGroup):
     def on_update(self, time):
         self.time = time
 
-        for bubble in self.kill_list:
-            if bubble in self.onbeat_bubbles:
-                self.onbeat_bubbles.remove(bubble)
-            elif bubble in self.offbeat_bubbles:
-                self.offbeat_bubbles.remove(bubble)
-            self.remove(bubble)
-        self.kill_list.clear()
-
         self.is_onbeat = self.audio.get_current_track().on_beat(self.time, 0.1)
 
         if self.is_onbeat:
@@ -150,19 +160,9 @@ class Character(InstructionGroup):
             self.num_beats = 0
 
         if self.is_onbeat:
-            for bubble in self.onbeat_bubbles:
-                bubble.on_beat()
+            self.section_modes[self.current_mode].on_beat()
 
-        for bubble in self.onbeat_bubbles | self.offbeat_bubbles:
-            bubble.on_update(self.time)
-
-        for bubble in self.onbeat_bubbles:
-            if bubble.dot.cpos[0] < -20:
-                self.kill_list.add(bubble)
-
-        for bubble in self.offbeat_bubbles:
-            if bubble.translate.x < -Window.width/2:
-                self.kill_list.add(bubble)
+        self.section_modes[self.current_mode].on_update(time)
 
 
 class OnBeatBubble(InstructionGroup):
