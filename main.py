@@ -19,7 +19,7 @@ class MainWidget(BaseWidget):
         self.duration = self.audio.get_current_track().duration
 
         self.progress_bar = ProgressBar(self.sections, self.duration)
-        self.canvas.add(self.bar)
+        self.canvas.add(self.progress_bar)
 
         self.ui = User(self.audio)
         self.canvas.add(self.ui)
