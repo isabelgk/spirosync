@@ -76,7 +76,7 @@ class Song:
         """Given time in milliseoconds, returns index of the current segment of Song"""
         i = 0
         time /= 1000
-        while i < len(self.section) and time > self.section[i][0]:
+        while i < len(self.sections) and time > self.sections[i][0]:
             i += 1
         return i - 1
 

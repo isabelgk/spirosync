@@ -251,7 +251,6 @@ class SpectralBars(InstructionGroup):
             self.add(PopMatrix())
 
         
-        self.current_data = 
 
 
 
