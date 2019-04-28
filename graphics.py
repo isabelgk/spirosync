@@ -184,16 +184,10 @@ class PulsingBar(InstructionGroup):
         self.time = 0
         self.rectangle = Rectangle(pos=(50,50), size=(50, 50))
 
+        self.on_beat_time = None
+
     def on_beat(self):
-        color = Color(*(random(),random(),random()))
-        new_rect = Rectangle(pos=(0,Window.height/2), size=(Window.width, 0))
-        grow = KFAnim((self.time, 0),(self.time + 0.01, Window.mouse_pos[1]-Window.height/2))
-        
-        self.add(color)
-        self.add(new_rect)
-        self.colors.append(color)
-        self.rectangles.append(new_rect)
-        self.grow_anims.append(grow)
+        self.on_beat_time = self.time
 
     def on_segment(self, data):
         # data gives loudness_start, loudness_max_time, loudness_max, loudness_end, pitches, timbre
@@ -203,22 +197,42 @@ class PulsingBar(InstructionGroup):
         pass
 
     def on_update(self, time):
+        # make rectangles if within 0.1 seconds of the beat
+        if self.on_beat_time is not None and self.time - 0.1 < self.on_beat_time < self.time + 0.1:
+            color = Color(*(random(),random(),random()))
+            new_rect = Rectangle(pos=(0,Window.height/2), size=(Window.width, 0))
+            grow = KFAnim((self.time, 0),(self.time + 0.01, Window.mouse_pos[1]-Window.height/2))
+
+            mirror_rect = Rectangle(pos=(0,Window.height/2), size=(Window.width, 0))
+            
+            self.add(color)
+            self.add(new_rect)
+            self.add(mirror_rect)
+            self.colors.append(color)
+            self.rectangles.append(new_rect)
+            self.rectangles.append(mirror_rect)
+            self.grow_anims.append(grow)
+
         self.time += kivyClock.frametime
+        # update rectangles and remove them if their height is 0
         remove_indices = []
-        for i in range(len(self.rectangles)):
+        for i in range(len(self.colors)):
             new_height = self.grow_anims[i].eval(self.time)
             if new_height == 0:
                 remove_indices.append(i)
-            elif self.rectangles[i].size[1] != new_height:
-                self.rectangles[i].size = (Window.width, new_height)
+            elif self.rectangles[2*i].size[1] != new_height:
+                self.rectangles[2*i].size = (Window.width, new_height)
+                self.rectangles[2*i+1].size = (Window.width, -new_height)
             else:
                 # self.colors[i].a = 0.5
-                self.grow_anims[i] = KFAnim((self.time, self.rectangles[i].size[1]), (self.time+1, 0))
+                self.grow_anims[i] = KFAnim((self.time, self.rectangles[2*i].size[1]), (self.time+1, 0))
         remove_indices.reverse()
         for i in remove_indices:
-            rectangle = self.rectangles.pop(i)
+            mirror_rect = self.rectangles.pop(2*i+1)
+            rectangle = self.rectangles.pop(2*i)
             self.grow_anims.pop(i)
             self.colors.pop(i)
+            self.remove(mirror_rect)
             self.remove(rectangle)
 
 
