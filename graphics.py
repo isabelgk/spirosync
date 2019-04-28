@@ -63,10 +63,9 @@ class User(InstructionGroup):
         # list of all modes
         self.modes = [PulsingBar(), Tunnel(), SpectralBars()]
 
-        self.bar = PulsingBar()
-        self.spectra = SpectralBars()
-        self.add(self.bar)
-        self.add(self.spectra)
+        #self.bar = PulsingBar()
+        #self.spectra = SpectralBars()
+        #self.add(self.bar)
 
         self.is_onbeat = False
         self.last_beat = 0
@@ -76,6 +75,7 @@ class User(InstructionGroup):
         self.num_beats = 0
 
         self.current_segment = 0
+        self.current_section = 0
 
         # Time keeping
         # self.duration = duration
@@ -111,25 +111,31 @@ class User(InstructionGroup):
         self.time = time
         self.is_onbeat = self.audio.get_current_track().on_beat(self.time, 0.1)
 
+        section_index = self.audio.get_current_track().get_section_index(time)
+        if section_index != self.current_section:
+            old_mode = self.modes[self.section_modes[self.current_section]]
+            new_mode = self.modes[self.section_modes[section_index]]
+            self.remove(old_mode)
+            self.add(new_mode)
+
+            self.current_mode = self.section_modes[section_index]
+            self.current_section = section_index
+
         if self.is_onbeat:
             self.num_beats += 1
         else:
             self.num_beats = 0
 
         if self.is_onbeat:
-            self.bar.on_beat()
-            self.spectra.on_beat()
+            self.modes[self.current_mode].on_beat()
 
-            #self.modes[self.current_mode].on_beat()
         segment_index = self.audio.get_current_track().get_segment_index(time)
         if segment_index != self.current_segment:
             self.current_segment = segment_index
             data = self.audio.get_current_track().get_segments_data()[self.current_segment]
-            self.spectra.on_segment(data)
+            self.modes[self.current_mode].on_segment(data)
 
-        self.bar.on_update(time)
-        self.spectra.on_update(time)
-
+        self.modes[self.current_mode].on_update(self.time)
 
 
 
