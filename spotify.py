@@ -61,7 +61,6 @@ class Song:
             if s['confidence'] > CONFIDENCE_THRESHOLD:
                 self.segments.append(s)
 
-        # print('loaded song')
 
         print(data['bars'])
 

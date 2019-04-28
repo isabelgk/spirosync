@@ -10,10 +10,10 @@ class MainWidget(BaseWidget):
     def __init__(self):
         super(MainWidget, self).__init__()
 
-        self.audio = Audio("shann0nduffy")
+        #self.audio = Audio("shann0nduffy")
 
         # Serena's account
-        # self.audio = User('1235254187')
+        self.audio = Audio('1235254187')
 
         #self.audio = User("isabelkaspriskie")
         self.sections = self.audio.get_current_track().get_sections()
@@ -22,7 +22,7 @@ class MainWidget(BaseWidget):
         self.bar = ProgressBar(self.sections, self.duration)
         self.canvas.add(self.bar)
 
-        self.character = Character(self.audio)
+        self.character = User(self.audio)
         self.canvas.add(self.character)
 
         self.is_up = False
@@ -94,12 +94,14 @@ class MainWidget(BaseWidget):
         self.info.text += 'song name: ' + self.audio.get_song_name() + '\n'
         self.info.text += 'artists: ' + str(self.audio.get_artists()) + '\n'
 
+        '''
         if self.is_up:
             self.character.on_up_press()
         if self.is_down:
             self.character.on_down_press()
         if self.spacebar_down:
             self.character.spacebar(self.time)
+        '''
 
         self.character.on_update(self.time)
 

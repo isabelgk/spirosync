@@ -15,7 +15,7 @@ from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
 
 from random import random, choice, randint
 
-from spotify import Song, User
+from spotify import Song, Audio
 
 # Constants
 kSpeed = 5000  # pixels/sec
@@ -87,7 +87,7 @@ class PulsingBar(InstructionGroup):
     def on_beat(self):
         pass
 
-    def on_segment(self, data)
+    def on_segment(self, data):
         # data gives loudness_start, loudness_max_tim, loudness_max, loudness_end, pitches, timbre
         pass
 
@@ -96,6 +96,43 @@ class PulsingBar(InstructionGroup):
 
     def on_update(self, time):
         pass
+
+
+class Tunnel(InstructionGroup):
+    def __init__(self):
+        pass
+
+    def on_beat(self):
+        pass
+
+    def on_segment(self, data):
+        # data gives loudness_start, loudness_max_tim, loudness_max, loudness_end, pitches, timbre
+        pass
+
+    def on_tatum(self):
+        pass
+
+    def on_update(self, time):
+        pass
+
+
+class SpectralBars(InstructionGroup):
+    def __init__(self):
+        pass
+
+    def on_beat(self):
+        pass
+
+    def on_segment(self, data):
+        # data gives loudness_start, loudness_max_tim, loudness_max, loudness_end, pitches, timbre
+        pass
+
+    def on_tatum(self):
+        pass
+
+    def on_update(self, time):
+        pass
+
 
 class User(InstructionGroup):
     """Character draws the character, handles audio data, and draws bubbles behind the character"""
@@ -107,9 +144,9 @@ class User(InstructionGroup):
         # index for current mode
         self.current_mode = 0
         # the mode for each section
-        self.section_modes = [int(random() * 3) for i in range(len(self.audio.get_current_track.get_sections()))]
+        self.section_modes = [int( random() * 3) for i in range(len(self.audio.get_current_track().get_sections()))]
         # list of all modes
-        self.modes = [PulsingBar, Tunnel, SpectralBars]
+        self.modes = [PulsingBar(), Tunnel(), SpectralBars()]
 
         self.onbeat_bubbles = set()
         self.offbeat_bubbles = set()
@@ -160,9 +197,9 @@ class User(InstructionGroup):
             self.num_beats = 0
 
         if self.is_onbeat:
-            self.section_modes[self.current_mode].on_beat()
+            self.modes[self.current_mode].on_beat()
 
-        self.section_modes[self.current_mode].on_update(time)
+        self.modes[self.current_mode].on_update(time)
 
 
 class OnBeatBubble(InstructionGroup):
