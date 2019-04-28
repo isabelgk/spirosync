@@ -34,42 +34,81 @@ class Song:
         self.track = track
         self.sp = spotify
         self.duration = duration
+        self.segments_data = []
         self.segments = []
         self.beats = []
+
+
+        self.sections_data = []
         self.sections = []
 
         self.bars = []
 
+
         data = self.sp.audio_analysis(self.track)
 
+
         # sort through beats, eliminate under-confident beats
+        # BEATS: list of (start, duration) tuples
         for b in data['beats']:
             if b['confidence'] > CONFIDENCE_THRESHOLD:
                 self.beats.append((b['start'], b['duration']))
 
         for s in data['sections']:
             # sections threshold must be 0 for progress bar to render correctly
-
+            # SECTIONS_DATA: dictionary where keys are {start, duration, confidence, loudness, tempo, tempo_confidence, key, key_confidence, mode, mode_confidence, time_signature, time_signature_confidence}
+            # SECTIONS: list of (start, duration) tuples
             if s['confidence'] > 0:
-                self.sections.append(s)
+                self.sections_data.append(s)
+                self.sections.append((s['start'], s['duration']))
 
         for b in data['bars']:
+            # BARs: list of (start, duration) tuples
             if b['confidence'] > CONFIDENCE_THRESHOLD:
                 self.bars.append((b['start'], b['duration']))
 
         for s in data['segments']:
+            # SEGMENTS DATA: list of dictionaries where keys are {start, duration, confidence, loudness_start, loudness_max_time, loudness_max, loudness_end, pitches, timbre}
+            # SEGMENTS: list of (start, duration) tuples
             if s['confidence'] > CONFIDENCE_THRESHOLD:
-                self.segments.append(s)
+                self.segments_data.append(s)
+                self.segments.append((s['start'], s['duration']))
 
 
-        print(data['bars'])
+        print(self.sections)
 
-    def get_sections(self):
-        return self.sections
+    def get_sections_data(self):
+        return self.sections_data
+
+    def get_segments_data(self):
+        return self.segments_data
 
     def get_beats(self):
         return self.beats
 
+    def get_section_index(self, time):
+        '''
+        Given time in milliseconds, returns index of the current section of Song
+        '''
+        i = 0
+        time /= 1000
+        while time > self.sections[i][0] and i < len(self.sections):
+            i += 1
+        return i - 1
+
+    def get_segment_index(self, time):
+        '''
+        Given time in milliseoconds, returns index of the current segment of Song
+        '''
+        i = 0
+        time /= 1000
+        while time > self.segments[i][0] and i < len(self.segments):
+            i += 1
+        return i - 1
+
+
+    def get_sections(self):
+        return self.sections
 
 
     def on_beat(self, time, threshold):

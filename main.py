@@ -16,7 +16,7 @@ class MainWidget(BaseWidget):
         self.audio = Audio('1235254187')
 
         #self.audio = User("isabelkaspriskie")
-        self.sections = self.audio.get_current_track().get_sections()
+        self.sections = self.audio.get_current_track().get_sections_data()
         self.duration = self.audio.get_current_track().duration
 
         self.bar = ProgressBar(self.sections, self.duration)
@@ -106,6 +106,8 @@ class MainWidget(BaseWidget):
         self.character.on_update(self.time)
 
         self.bar.on_update(self.progress)
+
+        print(self.audio.get_current_track().get_section_index(self.time))
 
 
 if __name__ == "__main__":
