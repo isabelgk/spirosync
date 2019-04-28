@@ -64,7 +64,9 @@ class User(InstructionGroup):
         self.modes = [PulsingBar(), Tunnel(), SpectralBars()]
 
         self.bar = PulsingBar()
+        self.spectra = SpectralBars()
         self.add(self.bar)
+        self.add(self.spectra)
 
         self.is_onbeat = False
         self.last_beat = 0
@@ -116,13 +118,19 @@ class User(InstructionGroup):
 
         if self.is_onbeat:
             self.bar.on_beat()
+            self.spectra.on_beat()
+
             #self.modes[self.current_mode].on_beat()
+        segment_index = self.audio.get_current_track().get_segment_index(time)
+        if segment_index != self.current_segment:
+            self.current_segment = segment_index
+            data = self.audio.get_current_track().get_segments_data()[self.current_segment]
+            self.spectra.on_segment(data)
 
         self.bar.on_update(time)
+        self.spectra.on_update(time)
 
-        #self.modes[self.current_mode].on_update(time)
-        self.add(self.modes[2])
-        self.modes[2].on_update(time)
+
 
 
 class ProgressBar(InstructionGroup):
@@ -214,12 +222,97 @@ class PulsingBar(InstructionGroup):
             self.remove(rectangle)
 
 
-class Tunnel(InstructionGroup):
-    def __init__(self):
+class DotRing(InstructionGroup):
+    """Used in the Tunnel. Based on the Flower InstructionGroup from lecture3.py"""
+    def __init__(self, start_pos=(Window.width / 2, Window.height / 2), start_ind=0, colors=((0, 1, 0), (0, 0, 1)),
+                 num_dots=8, dot_rad=30, ring_rad=60):
+        super(DotRing, self).__init__()
+        self.start_ind = start_ind
+        self.colors = colors
+        self.dot_rad = dot_rad
+
+        self.start_pos = start_pos
+
+        self.add(PushMatrix())
+        self.add(Translate(*start_pos))
+
+        # Each dot needs another rotation
+        d_theta = 360. / num_dots
+
+        # Rotates the whole ring
+        self._angle = Rotate(angle=0)
+        self.add(self._angle)
+
+        # Scales the whole ring
+        self._scale = Scale(origin=self.start_pos, xy=(1, 1))
+        self.add(self._scale)
+
+        # Translates the whole ring
+        self._translate = Translate()
+        self.add(self._translate)
+
+        # Increment rotation to place each petal
+        for n in range(num_dots):
+            self.add(Rotate(angle=d_theta))
+            self.add(Translate(ring_rad, 0))
+            c = colors[start_ind + n % len(colors)]  # Iterate through the list of colors so each dot is new color
+            self.add(Color(*c))
+            self.add(CEllipse(cpos=(0, 0), csize=(self.dot_rad, self.dot_rad)))
+            self.add(Translate(-ring_rad, 0))
+
+        self.add(PopMatrix())
+
+    def on_update(self):
         pass
 
+    @property
+    def angle(self):
+        return self._angle.angle
+
+    @angle.setter
+    def angle(self, x):
+        self._angle.angle = x
+
+    @property
+    def scale(self):
+        return self._scale.xyz
+
+    @scale.setter
+    def scale(self, s):
+        self._scale.origin = self._translate.xy
+        self._scale.xyz = self._scale.xyz[0] * s, self._scale.xyz[1] * s, self._scale.xyz[2] * s
+
+    @property
+    def translate(self):
+        return self._translate.xy
+
+    @translate.setter
+    def translate(self, xy):
+        self._scale.origin = xy
+        self._translate.xy = xy[0] - self.start_pos[0], xy[1] - self.start_pos[1]
+
+
+class Tunnel(InstructionGroup):
+    """Recreating https://codepen.io/Mamboleoo/pen/mJWLVJ.js"""
+    def __init__(self):
+        super(Tunnel, self).__init__()
+
+        self.num_dots = 8
+        self.dot_rad = 25
+        self.ring_rad = Window.width / 2
+
+        self.rings = []
+        self.pos = Window.mouse_pos
+
+        self.time = 0
+
     def on_beat(self):
-        pass
+        r = DotRing(num_dots=self.num_dots,
+                    dot_rad=self.dot_rad,
+                    ring_rad=self.ring_rad)
+
+        self.rings.append(r)
+        self.add(r)
 
     def on_segment(self, data):
         # data gives loudness_start, loudness_max_tim, loudness_max, loudness_end, pitches, timbre
@@ -229,7 +322,11 @@ class Tunnel(InstructionGroup):
         pass
 
     def on_update(self, time):
-        pass
+        for ring in self.rings:
+            ring.scale = 0.995
+
+        self.time = time
+        self.pos = Window.mouse_pos
 
 
 class SpectralBars(InstructionGroup):
@@ -265,24 +362,41 @@ class SpectralBars(InstructionGroup):
             self.add(bar)
             self.add(PopMatrix())
 
-        
-
-
+            self.segment_data = None
 
     def on_beat(self):
-        pass
+        for i, t in enumerate(self.translates):
+            if i < 12:
+                t.x -= 50
+            else:
+                t.x += 50
+
 
     def on_segment(self, data):
         # data gives loudness_start, loudness_max_tim, loudness_max, loudness_end, pitches, timbre
-        pass
+        self.segment_data = data
+
+        timbre = data['timbre']
+
+        for i in range(12):
+            left_translate = self.translates[i] 
+            right_translate = self.translates[23-i] 
+
+            left_translate.y = timbre[i] * 5
+            right_translate.y = timbre[i] * 5
+
+
+
 
     def on_tatum(self):
         pass
 
     def on_update(self, time):
         for t in self.translates:
-            diff = t.y
-            t.y -= diff
+            y_diff = t.y
+            x_diff = t.x
+            t.x -= x_diff * 0.5
+            t.y -= y_diff * 0.1
 
 
 
