@@ -113,6 +113,8 @@ class User(InstructionGroup):
 
         section_index = self.audio.get_current_track().get_section_index(time)
         if section_index != self.current_section:
+            # new section 
+
             old_mode = self.modes[self.section_modes[self.current_section]]
             new_mode = self.modes[self.section_modes[section_index]]
             self.remove(old_mode)
@@ -120,6 +122,8 @@ class User(InstructionGroup):
 
             self.current_mode = self.section_modes[section_index]
             self.current_section = section_index
+
+
 
         if self.is_onbeat:
             self.num_beats += 1
@@ -151,6 +155,7 @@ class ProgressBar(InstructionGroup):
 
         self.sections = sections
         self.duration = duration
+        self.section_color = []
 
         start_pos = self.buffer
         for section in self.sections:
@@ -159,6 +164,7 @@ class ProgressBar(InstructionGroup):
             colors = list(kPalette.values())
             colors.remove(kPalette['gray50'])  # Save light gray for the progress mark.
             color = Color(rgb=choice(colors))
+            self.section_color.append(color)
             self.add(color)
 
             section_length = section['duration'] * 1000
@@ -171,6 +177,9 @@ class ProgressBar(InstructionGroup):
         self.add(Color(rgb=kPalette['gray50']))
         self.progress_mark = Rectangle(pos=(self.buffer, self.buffer), size=(self.buffer / 10, self.buffer))
         self.add(self.progress_mark)
+
+    def get_section_color(self, i):
+        return self.section_color[i]
 
     def on_update(self, progress):
         self.progress_mark.pos = ((self.length * progress) + self.buffer, self.buffer)
@@ -388,8 +397,8 @@ class SpectralBars(InstructionGroup):
             left_translate = self.translates[i] 
             right_translate = self.translates[23-i] 
 
-            left_translate.y = timbre[i] * 5
-            right_translate.y = timbre[i] * 5
+            left_translate.y = timbre[i] * 2
+            right_translate.y = timbre[i] * 2
 
 
 
