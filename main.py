@@ -81,8 +81,8 @@ class MainWidget(BaseWidget):
             # self.time += (1/fps * 1000)
             # self.progress = self.time / self.audio.current_track.duration
             # self.throttle += 1
-
-        self.time += kivyClock.frametime * 1000
+        if self.audio.is_playing():
+            self.time += kivyClock.frametime * 1000
 
         self.info.text = ''
         self.info.text += 'time: %.2f\n' % self.time

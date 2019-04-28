@@ -92,7 +92,7 @@ class Song:
         '''
         i = 0
         time /= 1000
-        while time > self.sections[i][0] and i < len(self.sections):
+        while i < len(self.sections) and time > self.sections[i][0] :
             i += 1
         return i - 1
 
@@ -102,7 +102,7 @@ class Song:
         '''
         i = 0
         time /= 1000
-        while time > self.segments[i][0] and i < len(self.segments):
+        while i < len(self.segments) and time > self.segments[i][0] :
             i += 1
         return i - 1
 
@@ -202,7 +202,7 @@ class Audio:
 
         :return: True if a song is playing, False if not (e.g. paused song)
         """
-        if self.sp.current_playback() is None:
+        if self.sp.current_playback() is None or not self.sp.current_playback()['is_playing']:
             return False
         else:
             return True
