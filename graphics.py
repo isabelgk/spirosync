@@ -68,8 +68,12 @@ class User(InstructionGroup):
 
         self.is_onbeat = False
         self.last_beat = 0
+
+
         # count the number of iterations that have been on beat
         self.num_beats = 0
+
+        self.current_segment = 0
 
         # Time keeping
         # self.duration = duration
@@ -116,7 +120,10 @@ class User(InstructionGroup):
             #self.modes[self.current_mode].on_beat()
 
         self.bar.on_update(time)
-       # self.modes[self.current_mode].on_update(time)
+
+        #self.modes[self.current_mode].on_update(time)
+        self.add(self.modes[2])
+        self.modes[2].on_update(time)
 
 
 class ProgressBar(InstructionGroup):
@@ -228,20 +235,56 @@ class Tunnel(InstructionGroup):
 
 class SpectralBars(InstructionGroup):
     def __init__(self):
-        pass
+        super().__init__()
+        self.bars = []
+        self.translates = []
+
+        self.bar_width = Window.width / 36
+
+        self.bar_height = Window.height / 2
+
+        self.colors = list(kPalette.values())
+
+        for i in range(24):
+            color = None
+            if i < 12:
+                color = self.colors[i]
+            else:
+                color = self.colors[23-i]
+            self.add(Color(rgb=color))
+            pos = ( (i * self.bar_width) + (6 * self.bar_width), Window.height/4)
+            bar = Rectangle(pos = pos, size = (self.bar_width, self.bar_height))
+            
+            self.bars.append(bar)
+
+            translate = Translate(0,0,0)
+
+            self.translates.append(translate)
+
+            self.add(PushMatrix())
+            self.add(translate)
+            self.add(bar)
+            self.add(PopMatrix())
+
+        
+
+
 
     def on_beat(self):
         pass
 
     def on_segment(self, data):
-        # data gives loudness_start, loudness_max_time, loudness_max, loudness_end, pitches, timbre
+        # data gives loudness_start, loudness_max_tim, loudness_max, loudness_end, pitches, timbre
         pass
 
     def on_tatum(self):
         pass
 
     def on_update(self, time):
-        pass
+        for t in self.translates:
+            diff = t.y
+            t.y -= diff
+
 
 
 class OnBeatBubble(InstructionGroup):
