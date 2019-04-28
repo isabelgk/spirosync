@@ -61,11 +61,10 @@ class User(InstructionGroup):
         # the mode for each section
         self.section_modes = [int( random() * 3) for i in range(len(self.audio.get_current_track().get_sections()))]
         # list of all modes
-        self.modes = [PulsingBar(), Tunnel(), SpectralBars()]
+        #self.modes = [PulsingBar(), Tunnel(), SpectralBars()]
 
-        self.onbeat_bubbles = set()
-        self.offbeat_bubbles = set()
-        self.kill_list = set()
+        self.bar = PulsingBar()
+        self.add(self.bar)
 
         self.is_onbeat = False
         self.last_beat = 0
@@ -113,9 +112,11 @@ class User(InstructionGroup):
             self.num_beats = 0
 
         if self.is_onbeat:
-            self.modes[self.current_mode].on_beat()
+            self.bar.on_beat()
+            #self.modes[self.current_mode].on_beat()
 
-        self.modes[self.current_mode].on_update(time)
+        self.bar.on_update(time)
+       # self.modes[self.current_mode].on_update(time)
 
 
 class ProgressBar(InstructionGroup):
@@ -161,24 +162,24 @@ class ProgressBar(InstructionGroup):
 
 class PulsingBar(InstructionGroup):
     def __init__(self):
+        super(PulsingBar, self).__init__()
         self.rectangles = []
         self.grow_anims = []
+        self.colors = []
 
         self.time = 0
         self.rectangle = Rectangle(pos=(50,50), size=(50, 50))
-        self.add(Color(*(1,0,0)))
-        self.add(self.rectangle)
 
-    def on_beat(self, color, mouse_pos, time):
-        # are we thinking of making a new 
-        # new_rect = Rectangle(pos=(0,Window.height/2), size=(Window.width, 50))
-        # grow = KFAnim((0, 0),(0.1, mouse_pos[0]-Window.height/2))
+    def on_beat(self):
+        color = Color(*(random(),random(),random()))
+        new_rect = Rectangle(pos=(0,Window.height/2), size=(Window.width, 0))
+        grow = KFAnim((self.time, 0),(self.time + 0.01, Window.mouse_pos[1]-Window.height/2))
         
-        # self.add(Color(*color))
-        # self.add(new_rect)
-        # self.rectangles.append(new_rect)
-        # self.grow_anims.append(grow)
-        pass
+        self.add(color)
+        self.add(new_rect)
+        self.colors.append(color)
+        self.rectangles.append(new_rect)
+        self.grow_anims.append(grow)
 
     def on_segment(self, data):
         # data gives loudness_start, loudness_max_time, loudness_max, loudness_end, pitches, timbre
@@ -188,10 +189,24 @@ class PulsingBar(InstructionGroup):
         pass
 
     def on_update(self, time):
-        for (rect, grow) in zip(self.rectangles, self.grow_anims):
-            new_y = grow.eval(time)
-            if rect.size[1] != new_y:
-                rect.size = (Window.width, new_y)
+        self.time += kivyClock.frametime
+        remove_indices = []
+        for i in range(len(self.rectangles)):
+            new_height = self.grow_anims[i].eval(self.time)
+            if new_height == 0:
+                remove_indices.append(i)
+            elif self.rectangles[i].size[1] != new_height:
+                self.rectangles[i].size = (Window.width, new_height)
+            else:
+                # self.colors[i].a = 0.5
+                self.grow_anims[i] = KFAnim((self.time, self.rectangles[i].size[1]), (self.time+1, 0))
+        remove_indices.reverse()
+        for i in remove_indices:
+            rectangle = self.rectangles.pop(i)
+            self.grow_anims.pop(i)
+            self.colors.pop(i)
+            self.remove(rectangle)
+
 
 class Tunnel(InstructionGroup):
     def __init__(self):

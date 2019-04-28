@@ -11,15 +11,15 @@ class MainWidget(BaseWidget):
     def __init__(self):
         super(MainWidget, self).__init__()
 
-        self.audio = Audio('1235254187')  # Serena
+        # self.audio = Audio('1235254187')  # Serena
         # self.audio = User("isabelkaspriskie")  # Isabel
-        # self.audio = Audio("shann0nduffy")  # Shannon
+        self.audio = Audio("shann0nduffy")  # Shannon
 
         self.sections = self.audio.get_current_track().get_sections_data()
         self.duration = self.audio.get_current_track().duration
 
         self.progress_bar = ProgressBar(self.sections, self.duration)
-        self.canvas.add(self.bar)
+        self.canvas.add(self.progress_bar)
 
         self.ui = User(self.audio)
         self.canvas.add(self.ui)
@@ -64,8 +64,9 @@ class MainWidget(BaseWidget):
         self.progress = self.time / self.audio.current_track.duration
         fps = kivyClock.get_fps()
 
-        if self.audio.is_playing():
-            self.time += kivyClock.frametime * 1000
+        # if self.audio.is_playing():
+        self.time += kivyClock.frametime * 1000
+
 
         self.info.text = ''
         self.info.text += 'time: %.2f\n' % self.time
@@ -78,7 +79,7 @@ class MainWidget(BaseWidget):
 
         self.progress_bar.on_update(self.progress)
 
-        print(self.audio.get_current_track().get_section_index(self.time))
+        # print(self.audio.get_current_track().get_section_index(self.time))
 
 
 if __name__ == "__main__":
