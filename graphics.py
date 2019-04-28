@@ -15,9 +15,11 @@ from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
 
 from random import random, choice, randint
 
-from spotify import Song, Audio
 
+# ==================================
 # Constants
+# ==================================
+
 kSpeed = 5000  # pixels/sec
 kPalette = {'red400': (0.9372549019607843, 0.3254901960784314, 0.3137254901960784),
             'pink400': (0.9254901960784314, 0.25098039215686274, 0.47843137254901963),
@@ -42,6 +44,78 @@ kPalette = {'red400': (0.9372549019607843, 0.3254901960784314, 0.313725490196078
             'gray800': (0.25882352941176473, 0.25882352941176473, 0.25882352941176473),
             'gray900': (0.12941176470588237, 0.12941176470588237, 0.12941176470588237),
             }
+
+
+# ==================================
+# InstructionGroups
+# ==================================
+class User(InstructionGroup):
+    """ The User handles the audio analysis data and can call methods on the visualizer modes. """
+    def __init__(self, spotify_song):
+        super().__init__()
+
+        self.audio = spotify_song
+
+        # index for current mode
+        self.current_mode = 0
+        # the mode for each section
+        self.section_modes = [int( random() * 3) for i in range(len(self.audio.get_current_track().get_sections()))]
+        # list of all modes
+        self.modes = [PulsingBar(), Tunnel(), SpectralBars()]
+
+        self.onbeat_bubbles = set()
+        self.offbeat_bubbles = set()
+        self.kill_list = set()
+
+        self.is_onbeat = False
+        self.last_beat = 0
+        # count the number of iterations that have been on beat
+        self.num_beats = 0
+
+        # Time keeping
+        # self.duration = duration
+        # self.speed = speed
+        self.time = 0
+        self.on_update(0)
+
+    def spacebar(self, time):
+        # TODO: remove character
+        self.time = time
+        if self.is_onbeat and self.num_beats == 1:
+            bubble = OnBeatBubble(self.character.cpos, 20, kPalette["red400"], kSpeed)
+            self.add(bubble)
+            self.onbeat_bubbles.add(bubble)
+        else:
+            bubble = OffBeatSpray((self.character.cpos[0]/2, self.character.cpos[1]/2),
+                                  [kPalette["orange400"], kPalette["yellow400"]], bound=randint(10, 80),
+                                  animate=True)
+            self.add(bubble)
+            self.offbeat_bubbles.add(bubble)
+
+    def on_up_press(self):
+        current_pos = self.character.cpos
+        if current_pos[1] < Window.height:
+            self.character.cpos = (current_pos[0], current_pos[1] + 10)
+
+    def on_down_press(self):
+        current_pos = self.character.cpos
+        if current_pos[1] > 0:
+            self.character.cpos = (current_pos[0], current_pos[1] - 10)
+
+    def on_update(self, time):
+        self.time = time
+
+        self.is_onbeat = self.audio.get_current_track().on_beat(self.time, 0.1)
+
+        if self.is_onbeat:
+            self.num_beats += 1
+        else:
+            self.num_beats = 0
+
+        if self.is_onbeat:
+            self.modes[self.current_mode].on_beat()
+
+        self.modes[self.current_mode].on_update(time)
 
 
 class ProgressBar(InstructionGroup):
@@ -80,6 +154,11 @@ class ProgressBar(InstructionGroup):
     def on_update(self, progress):
         self.progress_mark.pos = ((self.length * progress) + self.buffer, self.buffer)
 
+
+# ==================================
+# Visualizer modes
+# ==================================
+
 class PulsingBar(InstructionGroup):
     def __init__(self):
         self.rectangles = []
@@ -102,7 +181,7 @@ class PulsingBar(InstructionGroup):
         pass
 
     def on_segment(self, data):
-        # data gives loudness_start, loudness_max_tim, loudness_max, loudness_end, pitches, timbre
+        # data gives loudness_start, loudness_max_time, loudness_max, loudness_end, pitches, timbre
         pass
 
     def on_tatum(self):
@@ -114,73 +193,40 @@ class PulsingBar(InstructionGroup):
             if rect.size[1] != new_y:
                 rect.size = (Window.width, new_y)
 
-class User(InstructionGroup):
-    """Character draws the character, handles audio data, and draws bubbles behind the character"""
-    def __init__(self, spotify_song):
-        super().__init__()
+class Tunnel(InstructionGroup):
+    def __init__(self):
+        pass
 
-        self.audio = spotify_song
+    def on_beat(self):
+        pass
 
-        # index for current mode
-        self.current_mode = 0
-        # the mode for each section
-        # self.section_modes = [int(random() * 3) for i in range(len(self.audio.get_current_track.get_sections()))]
-        # list of all modes
-        # self.modes = [PulsingBar, Tunnel, SpectralBars]
+    def on_segment(self, data):
+        # data gives loudness_start, loudness_max_tim, loudness_max, loudness_end, pitches, timbre
+        pass
 
-        self.bar = PulsingBar()
-        self.add(self.bar)
-
-        self.is_onbeat = False
-        self.last_beat = 0
-        # count the number of iterations that have been on beat
-        self.num_beats = 0
-
-        # Time keeping
-        # self.duration = duration
-        # self.speed = speed
-        self.time = 0
-        self.on_update(0)
-
-    def spacebar(self, time):
-        self.time = time
-        if self.is_onbeat and self.num_beats == 1:
-            bubble = OnBeatBubble(self.character.cpos, 20, kPalette["red400"], kSpeed)
-            self.add(bubble)
-            self.onbeat_bubbles.add(bubble)
-        else:
-            bubble = OffBeatSpray((self.character.cpos[0]/2, self.character.cpos[1]/2),
-                                  [kPalette["orange400"], kPalette["yellow400"]], bound=randint(10, 80),
-                                  animate=True)
-            self.add(bubble)
-            self.offbeat_bubbles.add(bubble)
-
-    def on_up_press(self):
-        current_pos = self.character.cpos
-        if current_pos[1] < Window.height:
-            self.character.cpos = (current_pos[0], current_pos[1] + 10)
-
-    def on_down_press(self):
-        current_pos = self.character.cpos
-        if current_pos[1] > 0:
-            self.character.cpos = (current_pos[0], current_pos[1] - 10)
+    def on_tatum(self):
+        pass
 
     def on_update(self, time):
-        self.time = time
+        pass
 
-        self.is_onbeat = self.audio.get_current_track().on_beat(self.time, 0.1)
 
-        if self.is_onbeat:
-            self.num_beats += 1
-        else:
-            self.num_beats = 0
+class SpectralBars(InstructionGroup):
+    def __init__(self):
+        pass
 
-        if self.is_onbeat:
-            self.bar.on_beat((1,0,0), Window.mouse_pos, self.time)
-            # self.section_modes[self.current_mode].on_beat()
+    def on_beat(self):
+        pass
 
-        self.bar.on_update(time)
-        # self.section_modes[self.current_mode].on_update(time)
+    def on_segment(self, data):
+        # data gives loudness_start, loudness_max_time, loudness_max, loudness_end, pitches, timbre
+        pass
+
+    def on_tatum(self):
+        pass
+
+    def on_update(self, time):
+        pass
 
 
 class OnBeatBubble(InstructionGroup):
@@ -276,32 +322,3 @@ class OffBeatSpray(InstructionGroup):
                 dot.pos = (dot.pos[0] + choice((-1, 1)) * random() * 2,
                            dot.pos[1] + choice((-1, 1)) * random() * 2)
         self.translate.x = self.translate.x - 10
-
-
-class TestWidget(BaseWidget):
-    def __init__(self):
-        super().__init__()
-
-        self.spray = OffBeatSpray((300, 300), ((100, 0, 30), (0, 50, 200)), animate=False)
-        self.canvas.add(self.spray)
-
-        self.one_bubble = OnBeatBubble((Window.width * 3 / 4, Window.height / 2), 20, (1, 1, 0), 10000)
-        self.canvas.add(self.one_bubble)
-
-        self.time = 0
-
-    def on_update(self, time):
-
-        if self.time > 2:
-            self.one_bubble.on_beat()
-            self.time -= 2
-
-        self.spray.on_update()
-
-        self.one_bubble.on_update(time)
-
-        self.time = time
-
-
-if __name__ == "__main__":
-    run(TestWidget)
