@@ -18,11 +18,11 @@ class MainWidget(BaseWidget):
         self.sections = self.audio.get_current_track().get_sections_data()
         self.duration = self.audio.get_current_track().duration
 
-        self.bar = ProgressBar(self.sections, self.duration)
+        self.progress_bar = ProgressBar(self.sections, self.duration)
         self.canvas.add(self.bar)
 
-        self.character = User(self.audio)
-        self.canvas.add(self.character)
+        self.ui = User(self.audio)
+        self.canvas.add(self.ui)
 
         self.is_up = False
         self.is_down = False
@@ -61,9 +61,6 @@ class MainWidget(BaseWidget):
             self.spacebar_down = False
 
     def on_update(self):
-        # call Character onupdate
-        # if self.audio.is_playing():
-
         self.progress = self.time / self.audio.current_track.duration
         fps = kivyClock.get_fps()
 
@@ -80,18 +77,9 @@ class MainWidget(BaseWidget):
         self.info.text += 'song name: ' + self.audio.get_song_name() + '\n'
         self.info.text += 'artists: ' + str(self.audio.get_artists()) + '\n'
 
-        '''
-        if self.is_up:
-            self.character.on_up_press()
-        if self.is_down:
-            self.character.on_down_press()
-        if self.spacebar_down:
-            self.character.spacebar(self.time)
-        '''
+        self.ui.on_update(self.time)
 
-        self.character.on_update(self.time)
-
-        self.bar.on_update(self.progress)
+        self.progress_bar.on_update(self.progress)
 
         print(self.audio.get_current_track().get_section_index(self.time))
 
