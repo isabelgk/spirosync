@@ -64,7 +64,9 @@ class User(InstructionGroup):
         #self.modes = [PulsingBar(), Tunnel(), SpectralBars()]
 
         self.bar = PulsingBar()
+        self.spectra = SpectralBars()
         self.add(self.bar)
+        self.add(self.spectra)
 
         self.is_onbeat = False
         self.last_beat = 0
@@ -117,13 +119,19 @@ class User(InstructionGroup):
 
         if self.is_onbeat:
             self.bar.on_beat()
+            self.spectra.on_beat()
+
             #self.modes[self.current_mode].on_beat()
+        segment_index = self.audio.get_current_track().get_segment_index(time)
+        if segment_index != self.current_segment:
+            self.current_segment = segment_index
+            data = self.audio.get_current_track().get_segments_data()[self.current_segment]
+            self.spectra.on_segment(data)
 
         self.bar.on_update(time)
+        self.spectra.on_update(time)
 
-        #self.modes[self.current_mode].on_update(time)
-        self.add(self.modes[2])
-        self.modes[2].on_update(time)
+
 
 
 class ProgressBar(InstructionGroup):
@@ -266,24 +274,41 @@ class SpectralBars(InstructionGroup):
             self.add(bar)
             self.add(PopMatrix())
 
-        
-
-
+            self.segment_data = None
 
     def on_beat(self):
-        pass
+        for i, t in enumerate(self.translates):
+            if i < 12:
+                t.x -= 50
+            else:
+                t.x += 50
+
 
     def on_segment(self, data):
         # data gives loudness_start, loudness_max_tim, loudness_max, loudness_end, pitches, timbre
-        pass
+        self.segment_data = data
+
+        timbre = data['timbre']
+
+        for i in range(12):
+            left_translate = self.translates[i] 
+            right_translate = self.translates[23-i] 
+
+            left_translate.y = timbre[i] * 5
+            right_translate.y = timbre[i] * 5
+
+
+
 
     def on_tatum(self):
         pass
 
     def on_update(self, time):
         for t in self.translates:
-            diff = t.y
-            t.y -= diff
+            y_diff = t.y
+            x_diff = t.x
+            t.x -= x_diff * 0.5
+            t.y -= y_diff * 0.1
 
 
 
