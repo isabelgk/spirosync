@@ -6,16 +6,15 @@ from spotify import *
 
 # https://developer.spotify.com/documentation/web-api/reference/tracks/get-audio-analysis/#timbre
 
+
 class MainWidget(BaseWidget):
     def __init__(self):
         super(MainWidget, self).__init__()
 
-        #self.audio = Audio("shann0nduffy")
+        self.audio = Audio('1235254187')  # Serena
+        # self.audio = User("isabelkaspriskie")  # Isabel
+        # self.audio = Audio("shann0nduffy")  # Shannon
 
-        # Serena's account
-        self.audio = Audio('1235254187')
-
-        #self.audio = User("isabelkaspriskie")
         self.sections = self.audio.get_current_track().get_sections_data()
         self.duration = self.audio.get_current_track().duration
 
@@ -32,8 +31,6 @@ class MainWidget(BaseWidget):
         # Static text display
         self.info = topleft_label()
         self.add_widget(self.info)
-
-        self.throttle = 0
 
         self.time = self.audio.get_time()  # Song position in ms
         self.progress = 0  # Song position in percent completion
@@ -69,18 +66,7 @@ class MainWidget(BaseWidget):
 
         self.progress = self.time / self.audio.current_track.duration
         fps = kivyClock.get_fps()
-        # fps = 0
-        # if self.throttle == 60:
-            # self.progress = self.audio.get_progress()
-            # self.time = self.audio.get_time()
-            # self.throttle = 0
-        # else:
-        #     fps = kivyClock.get_fps()
-        #     if fps == 0:
-        #         fps = 60
-            # self.time += (1/fps * 1000)
-            # self.progress = self.time / self.audio.current_track.duration
-            # self.throttle += 1
+
         if self.audio.is_playing():
             self.time += kivyClock.frametime * 1000
 

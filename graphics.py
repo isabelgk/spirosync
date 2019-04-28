@@ -80,6 +80,7 @@ class ProgressBar(InstructionGroup):
     def on_update(self, progress):
         self.progress_mark.pos = ((self.length * progress) + self.buffer, self.buffer)
 
+
 class PulsingBar(InstructionGroup):
     def __init__(self):
         pass
@@ -88,7 +89,7 @@ class PulsingBar(InstructionGroup):
         pass
 
     def on_segment(self, data):
-        # data gives loudness_start, loudness_max_tim, loudness_max, loudness_end, pitches, timbre
+        # data gives loudness_start, loudness_max_time, loudness_max, loudness_end, pitches, timbre
         pass
 
     def on_tatum(self):
@@ -124,7 +125,7 @@ class SpectralBars(InstructionGroup):
         pass
 
     def on_segment(self, data):
-        # data gives loudness_start, loudness_max_tim, loudness_max, loudness_end, pitches, timbre
+        # data gives loudness_start, loudness_max_time, loudness_max, loudness_end, pitches, timbre
         pass
 
     def on_tatum(self):
