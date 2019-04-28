@@ -61,7 +61,7 @@ class User(InstructionGroup):
         # the mode for each section
         self.section_modes = [int( random() * 3) for i in range(len(self.audio.get_current_track().get_sections()))]
         # list of all modes
-        #self.modes = [PulsingBar(), Tunnel(), SpectralBars()]
+        self.modes = [PulsingBar(), Tunnel(), SpectralBars()]
 
         self.bar = PulsingBar()
         self.add(self.bar)
@@ -107,7 +107,6 @@ class User(InstructionGroup):
 
     def on_update(self, time):
         self.time = time
-
         self.is_onbeat = self.audio.get_current_track().on_beat(self.time, 0.1)
 
         if self.is_onbeat:

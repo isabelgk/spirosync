@@ -39,6 +39,8 @@ class Song:
             if b['confidence'] > CONFIDENCE_THRESHOLD:
                 self.beats.append((b['start'], b['duration']))
 
+        self.beat_flag = [False] * len(self.beats)
+
         for s in data['sections']:
             # sections threshold must be 0 for progress bar to render correctly
             # SECTIONS_DATA: dictionary where keys are {start, duration, confidence, loudness, tempo, tempo_confidence,
@@ -104,7 +106,13 @@ class Song:
                 break
 
         # return True is close enough to beat directly before or after
-        return abs(time - self.beats[i - 1][0]) < threshold or abs(time - self.beats[i][0]) < threshold
+        if abs(time - self.beats[i - 1][0]) < threshold and not self.beat_flag[i-1]:
+            self.beat_flag[i-1] = True
+            return True
+        if abs(time - self.beats[i][0]) < threshold and not self.beat_flag[i]:
+            self.beat_flag[i] = True
+            return True
+        return False
 
     def on_bar(self, time, threshold):
         """
