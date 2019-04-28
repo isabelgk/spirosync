@@ -22,8 +22,8 @@ class MainWidget(BaseWidget):
         self.bar = ProgressBar(self.sections, self.duration)
         self.canvas.add(self.bar)
 
-        self.character = Character(self.audio)
-        self.canvas.add(self.character)
+        self.user = User(self.audio)
+        self.canvas.add(self.user)
 
         self.is_up = False
         self.is_down = False
@@ -87,21 +87,18 @@ class MainWidget(BaseWidget):
         self.info.text = ''
         self.info.text += 'time: %.2f\n' % self.time
         self.info.text += 'fps: %.2f\n' % fps
-        self.info.text += 'offbeat: %d\n' % len(self.character.offbeat_bubbles)
-        self.info.text += 'onbeat: %d\n' % len(self.character.onbeat_bubbles)
-        self.info.text += 'kill: %d\n' % len(self.character.kill_list)
         self.info.text += 'progress: %.2f \n' % self.progress
         self.info.text += 'song name: ' + self.audio.get_song_name() + '\n'
         self.info.text += 'artists: ' + str(self.audio.get_artists()) + '\n'
 
-        if self.is_up:
-            self.character.on_up_press()
-        if self.is_down:
-            self.character.on_down_press()
-        if self.spacebar_down:
-            self.character.spacebar(self.time)
+        # if self.is_up:
+        #     self.character.on_up_press()
+        # if self.is_down:
+        #     self.character.on_down_press()
+        # if self.spacebar_down:
+        #     self.character.spacebar(self.time)
 
-        self.character.on_update(self.time)
+        self.user.on_update(self.time)
 
         self.bar.on_update(self.progress)
 

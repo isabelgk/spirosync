@@ -15,7 +15,7 @@ from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
 
 from random import random, choice, randint
 
-from spotify import Song, User
+from spotify import Song, Audio
 
 # Constants
 kSpeed = 5000  # pixels/sec
@@ -82,12 +82,26 @@ class ProgressBar(InstructionGroup):
 
 class PulsingBar(InstructionGroup):
     def __init__(self):
+        self.rectangles = []
+        self.grow_anims = []
+
+        self.time = 0
+        self.rectangle = Rectangle(pos=(50,50), size=(50, 50))
+        self.add(Color(*(1,0,0)))
+        self.add(self.rectangle)
+
+    def on_beat(self, color, mouse_pos, time):
+        # are we thinking of making a new 
+        # new_rect = Rectangle(pos=(0,Window.height/2), size=(Window.width, 50))
+        # grow = KFAnim((0, 0),(0.1, mouse_pos[0]-Window.height/2))
+        
+        # self.add(Color(*color))
+        # self.add(new_rect)
+        # self.rectangles.append(new_rect)
+        # self.grow_anims.append(grow)
         pass
 
-    def on_beat(self):
-        pass
-
-    def on_segment(self, data)
+    def on_segment(self, data):
         # data gives loudness_start, loudness_max_tim, loudness_max, loudness_end, pitches, timbre
         pass
 
@@ -95,7 +109,10 @@ class PulsingBar(InstructionGroup):
         pass
 
     def on_update(self, time):
-        pass
+        for (rect, grow) in zip(self.rectangles, self.grow_anims):
+            new_y = grow.eval(time)
+            if rect.size[1] != new_y:
+                rect.size = (Window.width, new_y)
 
 class User(InstructionGroup):
     """Character draws the character, handles audio data, and draws bubbles behind the character"""
@@ -107,13 +124,12 @@ class User(InstructionGroup):
         # index for current mode
         self.current_mode = 0
         # the mode for each section
-        self.section_modes = [int(random() * 3) for i in range(len(self.audio.get_current_track.get_sections()))]
+        # self.section_modes = [int(random() * 3) for i in range(len(self.audio.get_current_track.get_sections()))]
         # list of all modes
-        self.modes = [PulsingBar, Tunnel, SpectralBars]
+        # self.modes = [PulsingBar, Tunnel, SpectralBars]
 
-        self.onbeat_bubbles = set()
-        self.offbeat_bubbles = set()
-        self.kill_list = set()
+        self.bar = PulsingBar()
+        self.add(self.bar)
 
         self.is_onbeat = False
         self.last_beat = 0
@@ -160,9 +176,11 @@ class User(InstructionGroup):
             self.num_beats = 0
 
         if self.is_onbeat:
-            self.section_modes[self.current_mode].on_beat()
+            self.bar.on_beat((1,0,0), Window.mouse_pos, self.time)
+            # self.section_modes[self.current_mode].on_beat()
 
-        self.section_modes[self.current_mode].on_update(time)
+        self.bar.on_update(time)
+        # self.section_modes[self.current_mode].on_update(time)
 
 
 class OnBeatBubble(InstructionGroup):
