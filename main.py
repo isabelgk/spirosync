@@ -32,11 +32,14 @@ class MainWidget(BaseWidget):
         self.info = topleft_label()
         self.add_widget(self.info)
 
+        self.song_info = song_label()
+        self.add_widget(self.song_info)
+
 
         # seems to be some lag??
-        #self.time = self.audio.get_time() - 1500 # Song position in ms
+        self.time = self.audio.get_time() # Song position in ms
 
-        self.time = self.audio.get_time() 
+        #self.time = self.audio.get_time() 
         self.progress = 0  # Song position in percent completion
         self.spotify_playing = self.audio.is_playing()  # Flag on whether Spotify is playing a song or not
 
@@ -86,14 +89,24 @@ class MainWidget(BaseWidget):
         self.info.text += 'time: %.2f\n' % self.time
         self.info.text += 'fps: %.2f\n' % fps
         self.info.text += 'progress: %.2f \n' % self.progress
-        self.info.text += 'song name: ' + self.audio.get_song_name() + '\n'
-        self.info.text += 'artists: ' + str(self.audio.get_artists()) + '\n'
+
+        self.song_info.text = self.audio.get_song_name() + '\n'
+        self.song_info.text +=  str(self.audio.get_artists()) + '\n'
 
         self.ui.on_update(self.time)
 
         self.progress_bar.on_update(self.progress)
 
         # print(self.audio.get_current_track().get_section_index(self.time))
+
+def song_label(font_filepath=None, font_size='20sp'):
+    l = Label(text = "text", valign='top', halign='right', font_size=font_size,
+              pos = ( 0.80 * Window.width, Window.height * 0.4 ),
+              text_size=( 0.25 * Window.width, Window.height))
+    print(l.pos)
+    if font_filepath is not None:
+        l.font_name = font_filepath
+    return l
 
 
 if __name__ == "__main__":
