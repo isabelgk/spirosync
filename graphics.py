@@ -254,6 +254,7 @@ class PulsingBar(InstructionGroup):
         self.rectangles = []
         self.grow_anims = []
         self.colors = []
+        self.color_palatte = generate_sub_palette(color)
 
         self.time = 0
         self.rectangle = Rectangle(pos=(50,50), size=(50, 50))
@@ -272,8 +273,9 @@ class PulsingBar(InstructionGroup):
 
     def on_update(self, time):
         # make rectangles if within 0.1 seconds of the beat
-        if self.on_beat_time is not None and self.time - 0.1 < self.on_beat_time < self.time + 0.1:
-            color = Color(*(random(),random(),random()))
+        if self.on_beat_time is not None and self.time - 0.05 < self.on_beat_time < self.time + 0.01:
+            color = Color(*(self.color_palatte[int(random()*len(self.color_palatte))]))
+
             new_rect = Rectangle(pos=(0,Window.height/2), size=(Window.width, 0))
             grow = KFAnim((self.time, 0),(self.time + 0.01, Window.mouse_pos[1]-Window.height/2))
 
@@ -390,7 +392,7 @@ class Tunnel(InstructionGroup):
     def __init__(self, color):
         super(Tunnel, self).__init__()
 
-        self.colors = generate_sub_palette(kPalette["red400"])
+        self.colors = generate_sub_palette(color)
 
         self.num_dots = len(self.colors)
         self.dot_rad = 100

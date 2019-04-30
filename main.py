@@ -11,9 +11,9 @@ class MainWidget(BaseWidget):
     def __init__(self):
         super(MainWidget, self).__init__()
 
-        self.audio = Audio('1235254187')  # Serena
+        #self.audio = Audio('1235254187')  # Serena
         # self.audio = User("isabelkaspriskie")  # Isabel
-        #self.audio = Audio("shann0nduffy")  # Shannon
+        self.audio = Audio("shann0nduffy")  # Shannon
 
         self.sections = self.audio.get_current_track().get_sections_data()
         self.duration = self.audio.get_current_track().duration
