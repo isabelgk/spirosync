@@ -32,7 +32,11 @@ class MainWidget(BaseWidget):
         self.info = topleft_label()
         self.add_widget(self.info)
 
-        self.time = self.audio.get_time()  # Song position in ms
+
+        # seems to be some lag??
+        #self.time = self.audio.get_time() - 1500 # Song position in ms
+
+        self.time = self.audio.get_time() 
         self.progress = 0  # Song position in percent completion
         self.spotify_playing = self.audio.is_playing()  # Flag on whether Spotify is playing a song or not
 
@@ -66,6 +70,16 @@ class MainWidget(BaseWidget):
 
         # if self.audio.is_playing():
         self.time += kivyClock.frametime * 1000
+
+        if self.time > self.duration:
+            self.audio.update_song()
+            self.time = self.audio.get_time()
+            self.progress = self.time / self.audio.current_track.duration
+
+
+            self.sections = self.audio.get_current_track().get_sections_data()
+            self.duration = self.audio.get_current_track().duration
+            self.progress_bar.update_song(self.sections, self.duration)
 
 
         self.info.text = ''

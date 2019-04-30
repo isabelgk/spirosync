@@ -157,6 +157,18 @@ class Audio:
             for artist in self.current_playback_data['item']['artists']:
                 self.artists.append(artist['name'])
 
+    
+    def update_song(self):
+        self.artists = []
+        
+        self.current_playback_data = self.sp.current_playback()
+        if self.current_playback_data:
+            self.current_track = Song(self.sp, self.current_playback_data['item']['id'],
+            self.current_playback_data['item']['duration_ms'])
+            self.song_name = self.current_playback_data['item']['name']
+            for artist in self.current_playback_data['item']['artists']:
+                    self.artists.append(artist['name'])
+
     def get_song_name(self):
         return self.song_name
 

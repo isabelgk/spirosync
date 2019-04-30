@@ -74,10 +74,6 @@ class User(InstructionGroup):
         self.audio = spotify_song
         self.progress_bar = progress_bar
 
-        
-        
-
-
         # the mode for each section
         self.section_modes = [int( random() * 3) for i in range(len(self.audio.get_current_track().get_sections()))]
 
@@ -136,6 +132,7 @@ class User(InstructionGroup):
 
     def on_update(self, time):
         self.time = time
+
         self.is_onbeat = self.audio.get_current_track().on_beat(self.time, 0.1)
 
         section_index = self.audio.get_current_track().get_section_index(time)
@@ -183,7 +180,8 @@ class ProgressBar(InstructionGroup):
         self.sections = sections
         self.duration = duration
         self.section_color = []
-
+        self.bars = []
+        print(self.duration)
         start_pos = self.buffer
         for section in self.sections:
 
@@ -197,19 +195,53 @@ class ProgressBar(InstructionGroup):
             section_length = section['duration'] * 1000
             bar_length = self.length * (section_length / self.duration)
             bar = Rectangle(pos=(start_pos, self.buffer), size=(bar_length, self.buffer))
+            self.bars.append(bar)
             start_pos += bar_length
             self.add(bar)
 
-        # Add a red progress mark.
+        # Add a gray progress mark.
         self.add(Color(rgb=kPalette['gray50']))
         self.progress_mark = Rectangle(pos=(self.buffer, self.buffer), size=(self.buffer / 10, self.buffer))
         self.add(self.progress_mark)
+
+    def update_song(self, sections, duration):
+        self.sections = sections
+        self.duration = duration
+        self.remove(self.progress_mark)
+        for b in self.bars:
+            self.remove(b)
+            self.bars = []
+            self.section_colors = []
+
+            start_pos = self.buffer
+            for section in self.sections:
+
+                # For now, use a random color for the section.
+                colors = list(kPalette.values())
+                colors.remove(kPalette['gray50'])  # Save light gray for the progress mark.
+                color = choice(colors)
+                self.section_color.append(color)
+                self.add(Color(rgb = color))
+
+                section_length = section['duration'] * 1000
+                bar_length = self.length * (section_length / self.duration)
+                bar = Rectangle(pos=(start_pos, self.buffer), size=(bar_length, self.buffer))
+                self.bars.append(bar)
+                start_pos += bar_length
+                self.add(bar)
+        self.add(Color(rgb=kPalette['gray50']))
+        self.add(self.progress_mark)
+
+
+
 
     def get_section_color(self, i):
         return self.section_color[i]
 
     def on_update(self, progress):
         self.progress_mark.pos = ((self.length * progress) + self.buffer, self.buffer)
+
+
 
 
 # ==================================
