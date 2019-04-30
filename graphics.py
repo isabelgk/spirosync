@@ -78,10 +78,8 @@ class User(InstructionGroup):
 
 
         # the mode for each section
-        #self.section_modes = [int( random() * 3) for i in range(len(self.audio.get_current_track().get_sections()))]
+        self.section_modes = [int( random() * 3) for i in range(len(self.audio.get_current_track().get_sections()))]
 
-        # FOR TESTING:
-        self.section_modes = [2 for i in range(len(self.audio.get_current_track().get_sections()))]
 
 
         # list of all modes
