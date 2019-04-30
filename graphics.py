@@ -2,11 +2,6 @@ import sys
 sys.path.append('..')
 from common.core import *
 from common.gfxutil import *
-from common.audio import *
-from common.mixer import *
-from common.note import *
-from common.wavegen import *
-from common.wavesrc import *
 
 from kivy.core.window import Window, WindowBase
 from kivy.graphics.instructions import InstructionGroup
@@ -14,6 +9,9 @@ from kivy.graphics import Color, Ellipse, Rectangle, Line
 from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
 
 from random import random, choice, randint
+
+import colorsys
+import numpy as np
 
 
 # ==================================
@@ -44,6 +42,25 @@ kPalette = {'red400': (0.9372549019607843, 0.3254901960784314, 0.313725490196078
             'gray800': (0.25882352941176473, 0.25882352941176473, 0.25882352941176473),
             'gray900': (0.12941176470588237, 0.12941176470588237, 0.12941176470588237),
             }
+
+
+def generate_sub_palette(rgb, num_colors=16):
+    """
+    From one input color, create a list of colors (a sub-palette) close to that original.
+
+    :param rgb: An RGB tuple as an initializer color
+    :param num_colors: integer number of colors in output palette
+    :return: list of RGB tuples of length num_colors
+    """
+    # Convert from RGB to HSV
+    h, s, v = colorsys.rgb_to_hsv(*rgb)
+
+    vs = np.linspace(0.7, 1.0, num_colors)
+    ss = np.linspace(0.01, 1.0, num_colors)
+
+    palette = [colorsys.hsv_to_rgb(h, ss[i], vs[i]) for i in range(num_colors)]
+
+    return palette
 
 
 # ==================================
@@ -428,8 +445,8 @@ class SpectralBars(InstructionGroup):
             t.y -= y_diff * 0.1
 
 
-
 class OnBeatBubble(InstructionGroup):
+    """Deprecated"""
     def __init__(self, pos, radius, color, speed):
         super().__init__()
 
@@ -473,6 +490,7 @@ class OnBeatBubble(InstructionGroup):
 
 
 class OffBeatSpray(InstructionGroup):
+    """Deprecated"""
     def __init__(self, pos, colors, bound=50, dot_size=5, num_dots=10, animate=False):
         """
         If the player hits the spacebar off the beat, a spray of dots will be placed onscreen.
@@ -522,3 +540,7 @@ class OffBeatSpray(InstructionGroup):
                 dot.pos = (dot.pos[0] + choice((-1, 1)) * random() * 2,
                            dot.pos[1] + choice((-1, 1)) * random() * 2)
         self.translate.x = self.translate.x - 10
+
+
+if __name__ == "__main__":
+    print(generate_sub_palette((0.9372549019607843, 0.3254901960784314, 0.3137254901960784)))
