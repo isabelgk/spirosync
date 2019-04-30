@@ -75,8 +75,15 @@ class User(InstructionGroup):
 
         # index for current mode
         self.current_mode = 0
+
+
         # the mode for each section
-        self.section_modes = [int( random() * 3) for i in range(len(self.audio.get_current_track().get_sections()))]
+        #self.section_modes = [int( random() * 3) for i in range(len(self.audio.get_current_track().get_sections()))]
+
+        # FOR TESTING:
+        self.section_modes = [2 for i in range(len(self.audio.get_current_track().get_sections()))]
+
+
         # list of all modes
         self.modes = [PulsingBar(), Tunnel(), SpectralBars()]
 
@@ -408,7 +415,7 @@ class SpectralBars(InstructionGroup):
 
         self.bar_height = Window.height / 2
 
-        self.colors = list(kPalette.values())
+        self.colors = generate_sub_palette(kPalette['teal400'], 12)
 
         for i in range(24):
             color = None
@@ -433,12 +440,14 @@ class SpectralBars(InstructionGroup):
 
             self.segment_data = None
 
+            self.mouse_distance_factor = [0 for i in range(24)]
+
     def on_beat(self):
         for i, t in enumerate(self.translates):
             if i < 12:
-                t.x -= 50
+                t.x -= (50 + self.mouse_distance_factor[i])
             else:
-                t.x += 50
+                t.x += (50 + self.mouse_distance_factor[i])
 
 
     def on_segment(self, data):
@@ -451,10 +460,8 @@ class SpectralBars(InstructionGroup):
             left_translate = self.translates[i] 
             right_translate = self.translates[23-i] 
 
-            left_translate.y = timbre[i] * 2
-            right_translate.y = timbre[i] * 2
-
-
+            left_translate.y = timbre[i] 
+            right_translate.y = timbre[i] 
 
 
     def on_tatum(self):
@@ -464,8 +471,18 @@ class SpectralBars(InstructionGroup):
         for t in self.translates:
             y_diff = t.y
             x_diff = t.x
-            t.x -= x_diff * 0.5
+            t.x -= x_diff * 0.1
             t.y -= y_diff * 0.1
+        x,y = Window.mouse_pos
+
+        if y > self.bars[0].pos[1] and y < (self.bars[0].pos[1] + self.bar_height):
+            for i,b in enumerate(self.bars):
+                scale = Window.width
+                d = 1/(b.pos[0] - Window.mouse_pos[0] + 1e-10) * scale
+                self.mouse_distance_factor[i] = min(Window.width / 50, d)
+        else:
+            self.mouse_distance_factor = [0 for i in range(24)]
+
 
 
 class OnBeatBubble(InstructionGroup):
