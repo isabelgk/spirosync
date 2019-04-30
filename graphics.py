@@ -301,15 +301,19 @@ class DotRing(InstructionGroup):
         for n in range(num_dots):
             self.add(Rotate(angle=d_theta))
             self.add(Translate(ring_rad, 0))
-            c = colors[start_ind + n % len(colors)]  # Iterate through the list of colors so each dot is new color
+            c = colors[(self.start_ind + n) % len(colors)]  # Iterate through the list of colors so each dot is new color
             self.add(Color(*c))
             self.add(CEllipse(cpos=(0, 0), csize=(self.dot_rad, self.dot_rad)))
             self.add(Translate(-ring_rad, 0))
 
         self.add(PopMatrix())
 
+        self.progress = 1
+        self.is_alive = True
+
     def on_update(self):
-        pass
+        if self.progress < 0.01:
+            self.is_alive = False
 
     @property
     def angle(self):
@@ -326,6 +330,7 @@ class DotRing(InstructionGroup):
     @scale.setter
     def scale(self, s):
         self._scale.origin = self._translate.xy
+        self.progress *= s
         self._scale.xyz = self._scale.xyz[0] * s, self._scale.xyz[1] * s, self._scale.xyz[2] * s
 
     @property
@@ -343,22 +348,32 @@ class Tunnel(InstructionGroup):
     def __init__(self):
         super(Tunnel, self).__init__()
 
-        self.num_dots = 8
-        self.dot_rad = 25
-        self.ring_rad = Window.width / 2
+        self.colors = generate_sub_palette(kPalette["red400"])
 
-        self.rings = []
+        self.num_dots = len(self.colors)
+        self.dot_rad = 100
+        self.ring_rad = Window.width / 2
+        self.index = 0
+
+        self.rings = set()
+        self.rings_to_kill = set()
+
         self.pos = Window.mouse_pos
 
         self.time = 0
 
     def on_beat(self):
-        r = DotRing(num_dots=self.num_dots,
+        r = DotRing(colors=self.colors,
+                    num_dots=self.num_dots,
                     dot_rad=self.dot_rad,
-                    ring_rad=self.ring_rad)
+                    ring_rad=self.ring_rad,
+                    start_pos=self.pos,
+                    start_ind=self.index)
 
-        self.rings.append(r)
+        self.rings.add(r)
         self.add(r)
+        self.index += 1
+        self.index = self.index % len(self.colors)
 
     def on_segment(self, data):
         # data gives loudness_start, loudness_max_tim, loudness_max, loudness_end, pitches, timbre
@@ -368,8 +383,16 @@ class Tunnel(InstructionGroup):
         pass
 
     def on_update(self, time):
+        for ring in self.rings_to_kill:
+            self.rings.remove(ring)
+            self.remove(ring)
+        self.rings_to_kill.clear()
+
         for ring in self.rings:
-            ring.scale = 0.995
+            if not ring.is_alive:
+                self.rings_to_kill.add(ring)
+            ring.scale = 0.992
+            ring.angle += 0.1
 
         self.time = time
         self.pos = Window.mouse_pos
