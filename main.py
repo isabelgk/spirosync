@@ -21,7 +21,7 @@ class MainWidget(BaseWidget):
         self.progress_bar = ProgressBar(self.sections, self.duration)
         self.canvas.add(self.progress_bar)
 
-        self.ui = User(self.audio)
+        self.ui = User(self.audio, self.progress_bar)
         self.canvas.add(self.ui)
 
         self.is_up = False

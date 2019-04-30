@@ -68,22 +68,27 @@ def generate_sub_palette(rgb, num_colors=16):
 # ==================================
 class User(InstructionGroup):
     """ The User handles the audio analysis data and can call methods on the visualizer modes. """
-    def __init__(self, spotify_song):
+    def __init__(self, spotify_song, progress_bar):
         super().__init__()
 
         self.audio = spotify_song
+        self.progress_bar = progress_bar
 
-        # index for current mode
-        self.current_mode = 0
+        
+        
 
 
         # the mode for each section
         self.section_modes = [int( random() * 3) for i in range(len(self.audio.get_current_track().get_sections()))]
 
 
+        # instance of current mode
+        self.current_mode = None
+
+
 
         # list of all modes
-        self.modes = [PulsingBar(), Tunnel(), SpectralBars()]
+        self.modes = [PulsingBar, Tunnel, SpectralBars]
 
         #self.bar = PulsingBar()
         #self.spectra = SpectralBars()
@@ -137,12 +142,12 @@ class User(InstructionGroup):
         if section_index != self.current_section:
             # new section 
 
-            old_mode = self.modes[self.section_modes[self.current_section]]
-            new_mode = self.modes[self.section_modes[section_index]]
-            self.remove(old_mode)
+            new_mode = self.modes[self.section_modes[section_index]](self.progress_bar.get_section_color(section_index))
+            if self.current_mode:
+                self.remove(self.current_mode)
             self.add(new_mode)
 
-            self.current_mode = self.section_modes[section_index]
+            self.current_mode = new_mode
             self.current_section = section_index
 
 
@@ -153,15 +158,15 @@ class User(InstructionGroup):
             self.num_beats = 0
 
         if self.is_onbeat:
-            self.modes[self.current_mode].on_beat()
+            self.current_mode.on_beat()
 
         segment_index = self.audio.get_current_track().get_segment_index(time)
         if segment_index != self.current_segment:
             self.current_segment = segment_index
             data = self.audio.get_current_track().get_segments_data()[self.current_segment]
-            self.modes[self.current_mode].on_segment(data)
+            self.current_mode.on_segment(data)
 
-        self.modes[self.current_mode].on_update(self.time)
+        self.current_mode.on_update(self.time)
 
 
 
@@ -185,9 +190,9 @@ class ProgressBar(InstructionGroup):
             # For now, use a random color for the section.
             colors = list(kPalette.values())
             colors.remove(kPalette['gray50'])  # Save light gray for the progress mark.
-            color = Color(rgb=choice(colors))
+            color = choice(colors)
             self.section_color.append(color)
-            self.add(color)
+            self.add(Color(rgb = color))
 
             section_length = section['duration'] * 1000
             bar_length = self.length * (section_length / self.duration)
@@ -212,7 +217,7 @@ class ProgressBar(InstructionGroup):
 # ==================================
 
 class PulsingBar(InstructionGroup):
-    def __init__(self):
+    def __init__(self, color):
         super(PulsingBar, self).__init__()
         self.rectangles = []
         self.grow_anims = []
@@ -350,7 +355,7 @@ class DotRing(InstructionGroup):
 
 class Tunnel(InstructionGroup):
     """Recreating https://codepen.io/Mamboleoo/pen/mJWLVJ.js"""
-    def __init__(self):
+    def __init__(self, color):
         super(Tunnel, self).__init__()
 
         self.colors = generate_sub_palette(kPalette["red400"])
@@ -404,8 +409,8 @@ class Tunnel(InstructionGroup):
 
 
 class SpectralBars(InstructionGroup):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, color):
+        super(SpectralBars, self).__init__()
         self.bars = []
         self.translates = []
 
@@ -413,7 +418,7 @@ class SpectralBars(InstructionGroup):
 
         self.bar_height = Window.height / 2
 
-        self.colors = generate_sub_palette(kPalette['teal400'], 12)
+        self.colors = generate_sub_palette(color, 12)
 
         for i in range(24):
             color = None
