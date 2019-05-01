@@ -123,7 +123,7 @@ class User(InstructionGroup):
         section_index = self.audio.get_current_track().get_section_index(time)
         if section_index != self.current_section:
             # new section 
-
+            print(section_index)
             new_mode = self.modes[self.section_modes[section_index]](self.progress_bar.get_section_color(section_index))
             if self.current_mode:
                 self.remove(self.current_mode)
