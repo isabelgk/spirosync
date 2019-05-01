@@ -172,7 +172,13 @@ class ProgressBar(InstructionGroup):
 
             # For now, use a random color for the section.
             colors = list(kPalette.values())
-            colors.remove(kPalette['gray50'])  # Save light gray for the progress mark.
+            colors.remove(kPalette['gray50'])  # Don't use the grays/brown in the section bars
+            colors.remove(kPalette['blue_gray400'])
+            colors.remove(kPalette['gray900'])
+            colors.remove(kPalette['gray800'])
+            colors.remove(kPalette['gray400'])
+            colors.remove(kPalette['brown400'])
+
             color = choice(colors)
             self.section_color.append(color)
             self.add(Color(rgb = color))
