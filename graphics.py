@@ -77,11 +77,8 @@ class User(InstructionGroup):
         # the mode for each section
         self.section_modes = [int( random() * 3) for i in range(len(self.audio.get_current_track().get_sections()))]
 
-
         # instance of current mode
         self.current_mode = None
-
-
 
         # list of all modes
         self.modes = [PulsingBar, Tunnel, SpectralBars]
@@ -106,50 +103,54 @@ class User(InstructionGroup):
         self.time = 0
         self.on_update(0)
 
-    def spacebar(self, time):
-        pass
+        self.play = True
 
-    def on_up_press(self):
-        pass
+    def play(self):
+        self.play = True
 
-    def on_down_press(self):
-        pass
+    def pause(self):
+        self.play = False
+
+    def spacebar(self):
+        if self.play:
+            self.play = False
+        else:
+            self.play = True
 
     def on_update(self, time):
-        self.time = time
+        if self.play:
+            self.time = time
+            self.is_onbeat = self.audio.get_current_track().on_beat(self.time, 0.1)
 
-        self.is_onbeat = self.audio.get_current_track().on_beat(self.time, 0.1)
+            section_index = self.audio.get_current_track().get_section_index(time)
+            if section_index != self.current_section:
+                # new section 
 
-        section_index = self.audio.get_current_track().get_section_index(time)
-        if section_index != self.current_section:
-            # new section 
+                new_mode = self.modes[self.section_modes[section_index]](self.progress_bar.get_section_color(section_index))
+                if self.current_mode:
+                    self.remove(self.current_mode)
+                self.add(new_mode)
 
-            new_mode = self.modes[self.section_modes[section_index]](self.progress_bar.get_section_color(section_index))
-            if self.current_mode:
-                self.remove(self.current_mode)
-            self.add(new_mode)
-
-            self.current_mode = new_mode
-            self.current_section = section_index
+                self.current_mode = new_mode
+                self.current_section = section_index
 
 
 
-        if self.is_onbeat:
-            self.num_beats += 1
-        else:
-            self.num_beats = 0
+            if self.is_onbeat:
+                self.num_beats += 1
+            else:
+                self.num_beats = 0
 
-        if self.is_onbeat:
-            self.current_mode.on_beat()
+            if self.is_onbeat:
+                self.current_mode.on_beat()
 
-        segment_index = self.audio.get_current_track().get_segment_index(time)
-        if segment_index != self.current_segment:
-            self.current_segment = segment_index
-            data = self.audio.get_current_track().get_segments_data()[self.current_segment]
-            self.current_mode.on_segment(data)
+            segment_index = self.audio.get_current_track().get_segment_index(time)
+            if segment_index != self.current_segment:
+                self.current_segment = segment_index
+                data = self.audio.get_current_track().get_segments_data()[self.current_segment]
+                self.current_mode.on_segment(data)
 
-        self.current_mode.on_update(self.time)
-
+            self.current_mode.on_update(self.time)
 
 
 class ProgressBar(InstructionGroup):

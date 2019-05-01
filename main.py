@@ -35,7 +35,6 @@ class MainWidget(BaseWidget):
         self.song_info = song_label()
         self.add_widget(self.song_info)
 
-
         # seems to be some lag??
         self.time = self.audio.get_time() # Song position in ms
 
@@ -44,28 +43,8 @@ class MainWidget(BaseWidget):
         self.spotify_playing = self.audio.is_playing()  # Flag on whether Spotify is playing a song or not
 
     def on_key_down(self, keycode, modifiers):
-        # up/down key will move character
-        # spacebar will release bubbles
-        if keycode[1] == 'up':
-            self.is_up = True
-
-        if keycode[1] == 'down':
-            self.is_down = True
-
         if keycode[1] == 'spacebar':
-            self.spacebar_down = True
-
-    def on_key_up(self, keycode):
-        # spacebar: stop releasing bubbles
-        # up/down: stop moving
-        if keycode[1] == 'up':
-            self.is_up = False
-
-        if keycode[1] == 'down':
-            self.is_down = False
-
-        if keycode[1] == 'spacebar':
-            self.spacebar_down = False
+            self.ui.spacebar()
 
     def on_update(self):
         self.progress = self.time / self.audio.current_track.duration
