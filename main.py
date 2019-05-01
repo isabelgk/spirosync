@@ -3,9 +3,15 @@ sys.path.append('..')
 
 from graphics import *
 from spotify import *
+import threading
+import time
 
 # https://developer.spotify.com/documentation/web-api/reference/tracks/get-audio-analysis/#timbre
 
+global song_name
+global artists
+global song_time
+song_time = 0
 
 class MainWidget(BaseWidget):
     def __init__(self):
@@ -37,12 +43,17 @@ class MainWidget(BaseWidget):
 
 
         # seems to be some lag??
-        self.time = self.audio.get_time() # Song position in ms
-
+        #self.time = self.audio.get_time() / 1000 # Song position in ms
+        self.time = song_time
         #self.time = self.audio.get_time() 
         self.progress = 0  # Song position in percent completion
         self.spotify_playing = self.audio.is_playing()  # Flag on whether Spotify is playing a song or not
 
+
+        # THREADING
+        self.api_thread = threading.Thread(target=self.call_api, args = (), daemon=True)
+        self.api_thread.start()
+        
     def on_key_down(self, keycode, modifiers):
         # up/down key will move character
         # spacebar will release bubbles
@@ -67,12 +78,27 @@ class MainWidget(BaseWidget):
         if keycode[1] == 'spacebar':
             self.spacebar_down = False
 
+    def call_api(self):
+
+        global song_time
+        while True:
+            if self.audio.get_time() != None:
+                song_time = self.audio.get_time()
+
     def on_update(self):
-        self.progress = self.time / self.audio.current_track.duration
+        global song_time
+
+        if self.time < song_time:
+            self.time = song_time
+        else:
+            self.time += kivyClock.frametime * 1000
+
+        self.progress = song_time / self.audio.current_track.duration
         fps = kivyClock.get_fps()
 
         # if self.audio.is_playing():
-        self.time += kivyClock.frametime * 1000
+        #self.time += kivyClock.frametime * 1000
+        #self.time = song_time
 
         if self.time > self.duration:
             self.audio.update_song()
