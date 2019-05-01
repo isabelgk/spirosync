@@ -8,8 +8,7 @@ import time
 
 # https://developer.spotify.com/documentation/web-api/reference/tracks/get-audio-analysis/#timbre
 
-global song_name
-global artists
+
 global song_time
 song_time = 0
 
@@ -17,9 +16,9 @@ class MainWidget(BaseWidget):
     def __init__(self):
         super(MainWidget, self).__init__()
 
-        #self.audio = Audio('1235254187')  # Serena
+        self.audio = Audio('1235254187')  # Serena
         # self.audio = User("isabelkaspriskie")  # Isabel
-        self.audio = Audio("shann0nduffy")  # Shannon
+        #self.audio = Audio("shann0nduffy")  # Shannon
 
         self.sections = self.audio.get_current_track().get_sections_data()
         self.duration = self.audio.get_current_track().duration
@@ -79,7 +78,7 @@ class MainWidget(BaseWidget):
             self.spacebar_down = False
 
     def call_api(self):
-
+        # continuously call spotify api to update time
         global song_time
         while True:
             if self.audio.get_time() != None:
@@ -88,6 +87,7 @@ class MainWidget(BaseWidget):
     def on_update(self):
         global song_time
 
+        # use spotify time if updated, else use kivyClock
         if self.time < song_time:
             self.time = song_time
         else:
