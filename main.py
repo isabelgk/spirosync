@@ -16,9 +16,12 @@ class MainWidget(BaseWidget):
     def __init__(self):
         super(MainWidget, self).__init__()
 
-        self.audio = Audio('1235254187')  # Serena
-        # self.audio = User("isabelkaspriskie")  # Isabel
+        # self.audio = Audio('1235254187')  # Serena
+        self.audio = Audio("isabelkaspriskie")  # Isabel
         #self.audio = Audio("shann0nduffy")  # Shannon
+
+        self.background = AmbientBackgroundCircles()
+        self.canvas.add(self.background)
 
         self.sections = self.audio.get_current_track().get_sections_data()
         self.duration = self.audio.get_current_track().duration
@@ -105,11 +108,9 @@ class MainWidget(BaseWidget):
             self.time = self.audio.get_time()
             self.progress = self.time / self.audio.current_track.duration
 
-
             self.sections = self.audio.get_current_track().get_sections_data()
             self.duration = self.audio.get_current_track().duration
             self.progress_bar.update_song(self.sections, self.duration)
-
 
         self.info.text = ''
         self.info.text += 'time: %.2f\n' % self.time
@@ -120,7 +121,7 @@ class MainWidget(BaseWidget):
         self.song_info.text +=  str(self.audio.get_artists()) + '\n'
 
         self.ui.on_update(self.time)
-
+        self.background.on_update(self.time)
         self.progress_bar.on_update(self.progress)
 
         # print(self.audio.get_current_track().get_section_index(self.time))
