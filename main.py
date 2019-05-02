@@ -120,8 +120,8 @@ class MainWidget(BaseWidget):
         self.song_info.text = self.audio.get_song_name() + '\n'
         self.song_info.text +=  str(self.audio.get_artists()) + '\n'
 
-        self.ui.on_update(self.time)
         self.background.on_update(self.time)
+        self.ui.on_update(self.time)
         self.progress_bar.on_update(self.progress)
 
         # print(self.audio.get_current_track().get_section_index(self.time))
