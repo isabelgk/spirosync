@@ -249,20 +249,24 @@ class FloatingCircle(InstructionGroup):
         self.pos += self.vel * dt
 
         # collision with bottom
-        if self.pos[1] < 0:
+        if self.pos[1] < - self.radius:
             self.vel[1] = -self.vel[1]
+            self.pos[1] = - self.radius
 
         # collision with top
-        if self.pos[1] > Window.height:
+        if self.pos[1] > Window.height + self.radius:
             self.vel[1] = - self.vel[1]
+            self.pos[1] = Window.height + self.radius
 
         # collision with left side
-        if self.pos[0] < 0:
+        if self.pos[0] < -self.radius :
             self.vel[0] = - self.vel[0]
+            self.pos[0] = - self.radius
 
         # collision with right side
-        if self.pos[0] > Window.width:
+        if self.pos[0] > Window.width + self.radius:
             self.vel[0] = - self.vel[0]
+            self.pos[0] = Window.width + self.radius
 
         self.circle.cpos = self.pos
 
