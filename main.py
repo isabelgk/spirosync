@@ -19,8 +19,8 @@ class MainWidget(BaseWidget):
     def __init__(self):
         super(MainWidget, self).__init__()
 
-        self.audio = Audio('1235254187')  # Serena
-        # self.audio = Audio("isabelkaspriskie")  # Isabel
+        # self.audio = Audio('1235254187')  # Serena
+        self.audio = Audio("isabelkaspriskie")  # Isabel
         #self.audio = Audio("shann0nduffy")  # Shannon
 
         self.background = AmbientBackgroundCircles(alpha=0.4, num_circles=20)
@@ -40,7 +40,7 @@ class MainWidget(BaseWidget):
         self.spacebar_down = False
 
         # Static text display
-        self.info = topleft_label()
+        self.info = topleft_label(font_filepath="res/font/CabinCondensed-Regular.ttf")
         self.add_widget(self.info)
 
         self.song_info = song_label()
@@ -113,7 +113,7 @@ class MainWidget(BaseWidget):
 
         # print(self.audio.get_current_track().get_section_index(self.time))
 
-def song_label(font_filepath=None, font_size='20sp'):
+def song_label(font_filepath='res/font/CabinCondensed-Regular.ttf', font_size='20sp'):
     l = Label(text = "text", valign='top', halign='right', font_size=font_size,
               pos = ( 0.80 * Window.width, Window.height * 0.4 ),
               text_size=( 0.25 * Window.width, Window.height))
