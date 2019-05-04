@@ -77,11 +77,8 @@ class User(InstructionGroup):
         # the mode for each section
         self.section_modes = [int( random() * 3) for i in range(len(self.audio.get_current_track().get_sections()))]
 
-
         # instance of current mode
         self.current_mode = None
-
-
 
         # list of all modes
         self.modes = [PulsingBar, Tunnel, SpectralBars]
@@ -106,14 +103,19 @@ class User(InstructionGroup):
         self.time = 0
         self.on_update(0)
 
-    def spacebar(self, time):
-        pass
+        self.play = True
 
-    def on_up_press(self):
-        pass
+    def play(self):
+        self.play = True
 
-    def on_down_press(self):
-        pass
+    def pause(self):
+        self.play = False
+
+    def spacebar(self):
+        if self.play:
+            self.play = False
+        else:
+            self.play = True
 
     def on_update(self, time):
         self.time = time
@@ -147,7 +149,6 @@ class User(InstructionGroup):
             self.current_mode.on_segment(data)
 
         self.current_mode.on_update(self.time)
-
 
 class ProgressBar(InstructionGroup):
     """Graphics representing progress bar. Animates the fraction of the song that has played"""
