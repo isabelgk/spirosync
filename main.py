@@ -12,12 +12,15 @@ import time
 global song_time
 song_time = 0
 
+global is_playing
+is_playing = False
+
 class MainWidget(BaseWidget):
     def __init__(self):
         super(MainWidget, self).__init__()
 
-        # self.audio = Audio('1235254187')  # Serena
-        self.audio = Audio("isabelkaspriskie")  # Isabel
+        self.audio = Audio('1235254187')  # Serena
+        # self.audio = Audio("isabelkaspriskie")  # Isabel
         #self.audio = Audio("shann0nduffy")  # Shannon
 
         self.background = AmbientBackgroundCircles(alpha=0.4, num_circles=20)
@@ -82,18 +85,23 @@ class MainWidget(BaseWidget):
 
     def call_api(self):
         # continuously call spotify api to update time
+        # returns playing flag and time
         global song_time
+        global is_playing
         while True:
             if self.audio.get_time() != None:
                 song_time = self.audio.get_time()
+                is_playing = self.audio.is_playing()
 
     def on_update(self):
         global song_time
+        global is_playing
 
+        
         # use spotify time if updated, else use kivyClock
         if self.time < song_time:
             self.time = song_time
-        else:
+        elif is_playing:
             self.time += kivyClock.frametime * 1000
 
         self.progress = song_time / self.audio.current_track.duration
