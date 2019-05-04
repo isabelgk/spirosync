@@ -118,40 +118,37 @@ class User(InstructionGroup):
             self.play = True
 
     def on_update(self, time):
-        if self.play:
-            self.time = time
-            self.is_onbeat = self.audio.get_current_track().on_beat(self.time, 0.1)
+        self.time = time
 
-            section_index = self.audio.get_current_track().get_section_index(time)
-            if section_index != self.current_section:
-                # new section 
+        self.is_onbeat = self.audio.get_current_track().on_beat(self.time, 0.1)
 
-                new_mode = self.modes[self.section_modes[section_index]](self.progress_bar.get_section_color(section_index))
-                if self.current_mode:
-                    self.remove(self.current_mode)
-                self.add(new_mode)
+        section_index = self.audio.get_current_track().get_section_index(time)
+        if section_index != self.current_section:
+            # new section 
+            print(section_index)
+            new_mode = self.modes[self.section_modes[section_index]](self.progress_bar.get_section_color(section_index))
+            if self.current_mode:
+                self.remove(self.current_mode)
+            self.add(new_mode)
 
-                self.current_mode = new_mode
-                self.current_section = section_index
+            self.current_mode = new_mode
+            self.current_section = section_index
 
+        if self.is_onbeat:
+            self.num_beats += 1
+        else:
+            self.num_beats = 0
 
+        if self.is_onbeat:
+            self.current_mode.on_beat()
 
-            if self.is_onbeat:
-                self.num_beats += 1
-            else:
-                self.num_beats = 0
+        segment_index = self.audio.get_current_track().get_segment_index(time)
+        if segment_index != self.current_segment:
+            self.current_segment = segment_index
+            data = self.audio.get_current_track().get_segments_data()[self.current_segment]
+            self.current_mode.on_segment(data)
 
-            if self.is_onbeat:
-                self.current_mode.on_beat()
-
-            segment_index = self.audio.get_current_track().get_segment_index(time)
-            if segment_index != self.current_segment:
-                self.current_segment = segment_index
-                data = self.audio.get_current_track().get_segments_data()[self.current_segment]
-                self.current_mode.on_segment(data)
-
-            self.current_mode.on_update(self.time)
-
+        self.current_mode.on_update(self.time)
 
 class ProgressBar(InstructionGroup):
     """Graphics representing progress bar. Animates the fraction of the song that has played"""
@@ -173,7 +170,13 @@ class ProgressBar(InstructionGroup):
 
             # For now, use a random color for the section.
             colors = list(kPalette.values())
-            colors.remove(kPalette['gray50'])  # Save light gray for the progress mark.
+            colors.remove(kPalette['gray50'])  # Don't use the grays/brown in the section bars
+            colors.remove(kPalette['blue_gray400'])
+            colors.remove(kPalette['gray900'])
+            colors.remove(kPalette['gray800'])
+            colors.remove(kPalette['gray400'])
+            colors.remove(kPalette['brown400'])
+
             color = choice(colors)
             self.section_color.append(color)
             self.add(Color(rgb = color))
@@ -218,9 +221,6 @@ class ProgressBar(InstructionGroup):
         self.add(Color(rgb=kPalette['gray50']))
         self.add(self.progress_mark)
 
-
-
-
     def get_section_color(self, i):
         return self.section_color[i]
 
@@ -228,6 +228,73 @@ class ProgressBar(InstructionGroup):
         self.progress_mark.pos = ((self.length * progress) + self.buffer, self.buffer)
 
 
+class FloatingCircle(InstructionGroup):
+    def __init__(self, pos, r):
+        super().__init__()
+
+        self.radius = r
+        self.pos = np.array(pos, dtype=np.float)
+        self.vel = np.array((choice([-1, 1])*randint(50, 200), choice([-1, 1])*randint(50, 200)), dtype=np.float)
+
+        self.circle = CEllipse(cpos=pos, csize=(2*r, 2*r), segments=40)
+        self.add(self.circle)
+
+        self.time = 0
+        self.on_update(0)
+
+    def on_update(self, time):
+        dt = (time - self.time)/1000
+        self.time = time
+
+        # integrate vel to get pos
+        self.pos += self.vel * dt
+
+        # collision with bottom
+        if self.pos[1] < - self.radius:
+            self.vel[1] = -self.vel[1]
+            self.pos[1] = - self.radius
+
+        # collision with top
+        if self.pos[1] > Window.height + self.radius:
+            self.vel[1] = - self.vel[1]
+            self.pos[1] = Window.height + self.radius
+
+        # collision with left side
+        if self.pos[0] < -self.radius :
+            self.vel[0] = - self.vel[0]
+            self.pos[0] = - self.radius
+
+        # collision with right side
+        if self.pos[0] > Window.width + self.radius:
+            self.vel[0] = - self.vel[0]
+            self.pos[0] = Window.width + self.radius
+
+        self.circle.cpos = self.pos
+
+        return True
+
+
+class AmbientBackgroundCircles(InstructionGroup):
+    """Light colored fading"""
+    def __init__(self, alpha=0.2, num_circles=20):
+        super().__init__()
+
+        color = Color(*kPalette['gray800'])
+        color.a = alpha
+        self.add(color)
+
+        self.circles = []
+        for i in range(num_circles):
+            rad = randint(200, 400)
+            pos = random() * Window.width, random() * Window.height
+            circle = FloatingCircle(pos, rad)
+            self.circles.append(circle)
+            self.add(circle)
+
+    def on_update(self, time):
+        for circle in self.circles:
+            # Move around randomly
+            circle.on_update(time)
 
 
 # ==================================
