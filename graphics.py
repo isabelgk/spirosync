@@ -769,10 +769,19 @@ class Prism(InstructionGroup):
             dot = np.array(v)
             dist = np.abs(np.linalg.norm(dot-np.array(self.mouse_pos)))
             if dist < self.boundary:
+                # Remove edges
+                for e in self.edges:
+                    self.remove(e)
+
                 # Move the vertex
                 new_pos = self.vertices[v].on_touch()
                 self.vertices[new_pos] = self.vertices[v]
                 self.vertices.pop(v)
+
+                # Redraw the edges
+                self.edges = self._gen_edges(self.vertices.keys())
+                for e in self.edges:
+                    self.add(e)
 
 
 class OnBeatBubble(InstructionGroup):
