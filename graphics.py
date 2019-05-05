@@ -11,6 +11,7 @@ from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
 from random import random, choice, randint
 
 import colorsys
+import itertools
 import numpy as np
 
 
@@ -75,13 +76,15 @@ class User(InstructionGroup):
         self.progress_bar = progress_bar
 
         # the mode for each section
-        self.section_modes = [int( random() * 3) for i in range(len(self.audio.get_current_track().get_sections()))]
+        # self.section_modes = [int( random() * 3) for i in range(len(self.audio.get_current_track().get_sections()))]
+        self.section_modes = [0 for i in range(len(self.audio.get_current_track().get_sections()))]
 
         # instance of current mode
         self.current_mode = None
 
         # list of all modes
-        self.modes = [PulsingBar, Tunnel, SpectralBars]
+        # self.modes = [PulsingBar, Tunnel, SpectralBars, Prism]
+        self.modes = [Prism]
 
         self.is_onbeat = False
         self.last_beat = 0
@@ -612,6 +615,164 @@ class SpectralBars(InstructionGroup):
                 self.mouse_distance_factor[i] = min(Window.width / 50, d)
         else:
             self.mouse_distance_factor = [0 for i in range(24)]
+
+
+class Vertex(InstructionGroup):
+    """Class to use in Prism"""
+    def __init__(self, pos, rgb, rad, a=1):
+        super(Vertex, self).__init__()
+        self.pos = pos
+        self.rad = rad
+
+        self.color = Color(*rgb)
+        self.alpha = a
+        self.color.a = self.alpha
+        self.add(self.color)
+
+        self.dot = CEllipse(cpos=self.pos, csize=(2 * self.rad, 2 * self.rad), segments=10)
+        self.add(self.dot)
+
+        self.touched = False
+
+        self.time = 0
+
+    def on_touch(self):
+        """
+        Called by Prism when the mouse touches the vertex
+        Moves the point to a new place on screen
+        Returns coordinates of new vertex position
+        """
+        if not self.touched:
+            self.touched = True
+            old_pos = self.dot.cpos
+            new_pos = (old_pos[0] + choice((-1, 1)) * randint(self.rad, self.rad * 4),
+                       old_pos[1] + choice((-1, 1)) * randint(self.rad, self.rad * 4))
+            self.dot.cpos = new_pos
+            return new_pos
+        else:
+            return None
+
+    def on_tatum(self):
+        pass
+
+    def on_segment(self):
+        pass
+
+    def on_update(self, time):
+        self.time = time
+        if self.touched:
+            print("touched!")
+            self.touched = False
+
+
+class Edge(InstructionGroup):
+    def __init__(self, points, color, width=1, a=1):
+        super(Edge, self).__init__()
+
+        self.color = Color(*color)
+        self.color.a = a
+        self.add(self.color)
+
+        self.line = Line(points=points, width=width)
+        self.add(self.line)
+
+        self.index = 0
+
+    def on_pulse(self):
+        self.index += 1
+        if self.index % 2 == 0:
+            self.line.width /= 1.5
+        else:
+            self.line.width *= 1.5
+
+
+class Prism(InstructionGroup):
+    """
+    Inspired by https://www.youtube.com/watch?v=T3dpoSzWCu4
+
+    A complete graph that wobbles around and looks like a prism
+    """
+    def __init__(self, color):
+        super(Prism, self).__init__()
+        v = 8  # number of vertices
+
+        self.vertex_rad = 10
+        self.boundary = self.vertex_rad * 1.2  # Radial boundary for registering a touch on a vertex
+
+        # Generate RGB palette
+        self.colors = generate_sub_palette(color, num_colors=v+3)
+        self.edge_color = self.colors[-1]
+        self.vertex_colors = self.colors[:-1]
+
+        # Keep track of mouse position and time
+        self.mouse_pos = Window.mouse_pos
+        self.time = 0
+
+        # Graphical elements (vertices and edges)
+        self.vertices = {}
+        for i in range(v):
+            # Random position
+            x_pos = randint(int(Window.width * 0.1), int(Window.width * 0.9))
+            y_pos = randint(int(Window.height * 0.2), int(Window.height * 0.8))
+            pos = x_pos, y_pos
+
+            # Object to draw on screen
+            vertex = Vertex(pos=pos, rgb=self.vertex_colors[i], rad=self.vertex_rad)
+
+            # Store in dictionary for fast vertex lookup based on position
+            self.vertices[pos] = vertex
+
+        # Create a list where each element is a 2-tuple of the vertex points
+        self.edges = self._gen_edges(self.vertices.keys())
+        for e in self.edges:
+            self.add(e)
+
+        for v in self.vertices.values():
+            self.add(v)
+
+    def _gen_edges(self, vertices):
+        """
+        Helper method to create a list where each element is a 2-tuple of the vertex points
+        :param vertices: Coordinates of vertices (list)
+        :return: pairs of coordinates (list)
+        """
+        edges = []
+        edge_points = list(itertools.combinations(vertices, 2))
+        for i in range(len(edge_points)):
+            edge = Edge(points=edge_points[i], color=self.edge_color, width=2)
+            edges.append(edge)
+        return edges
+
+    def on_beat(self):
+        """Pulse line width of the graph edges"""
+        for e in self.edges:
+            e.on_pulse()
+
+    def on_segment(self, data):
+        """Change size of the vertices based on timbre vector"""
+        for v in self.vertices.values():
+            v.on_segment()
+
+    def on_tatum(self):
+        """Release little dots from the vertices"""
+        for v in self.vertices.values():
+            v.on_tatum()
+
+    def on_update(self, time):
+        """Called by User every frame"""
+        self.time = time
+        self.mouse_pos = Window.mouse_pos
+
+        # Check which vertex is near the mouse
+        for v in self.vertices.keys():
+            self.vertices[v].on_update(self.time)
+            dot = np.array(v)
+            dist = np.abs(np.linalg.norm(dot-np.array(self.mouse_pos)))
+            if dist < self.boundary:
+                # Move the vertex
+                new_pos = self.vertices[v].on_touch()
+                self.vertices[new_pos] = self.vertices[v]
+                self.vertices.pop(v)
 
 
 class OnBeatBubble(InstructionGroup):
