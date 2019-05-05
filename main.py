@@ -62,6 +62,9 @@ class MainWidget(BaseWidget):
         if keycode[1] == 'spacebar':
             self.ui.spacebar()
 
+    def on_touch_move(self, touch):
+        self.ui.on_touch_move(touch)
+
     def call_api(self):
         # continuously call spotify api to update time
         # returns playing flag and time
@@ -117,7 +120,7 @@ def song_label(font_filepath='res/font/CabinCondensed-Regular.ttf', font_size='2
     l = Label(text = "text", valign='top', halign='right', font_size=font_size,
               pos = ( 0.80 * Window.width, Window.height * 0.4 ),
               text_size=( 0.25 * Window.width, Window.height))
-    print(l.pos)
+    # print(l.pos)
     if font_filepath is not None:
         l.font_name = font_filepath
     return l
