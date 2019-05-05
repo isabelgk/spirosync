@@ -83,13 +83,8 @@ class User(InstructionGroup):
         # list of all modes
         self.modes = [PulsingBar, Tunnel, SpectralBars]
 
-        #self.bar = PulsingBar()
-        #self.spectra = SpectralBars()
-        #self.add(self.bar)
-
         self.is_onbeat = False
         self.last_beat = 0
-
 
         # count the number of iterations that have been on beat
         self.num_beats = 0
@@ -150,6 +145,7 @@ class User(InstructionGroup):
 
         self.current_mode.on_update(self.time)
 
+
 class ProgressBar(InstructionGroup):
     """Graphics representing progress bar. Animates the fraction of the song that has played"""
 
@@ -164,7 +160,6 @@ class ProgressBar(InstructionGroup):
         self.duration = duration
         self.section_color = []
         self.bars = []
-        print(self.duration)
         start_pos = self.buffer
         for section in self.sections:
 
@@ -335,6 +330,7 @@ class PulsingBar(InstructionGroup):
         pass
 
     def on_update(self, time):
+        # TODO: remove the following stuff?
         # make rectangles if within 0.1 seconds of the beat
         
         # if self.on_beat_time is not None and self.time - 0.05 < self.on_beat_time < self.time + 0.01:
@@ -585,7 +581,6 @@ class SpectralBars(InstructionGroup):
             else:
                 t.x += (50 + self.mouse_distance_factor[i])
 
-
     def on_segment(self, data):
         # data gives loudness_start, loudness_max_tim, loudness_max, loudness_end, pitches, timbre
         self.segment_data = data
@@ -598,7 +593,6 @@ class SpectralBars(InstructionGroup):
 
             left_translate.y = timbre[i] 
             right_translate.y = timbre[i] 
-
 
     def on_tatum(self):
         pass
@@ -618,7 +612,6 @@ class SpectralBars(InstructionGroup):
                 self.mouse_distance_factor[i] = min(Window.width / 50, d)
         else:
             self.mouse_distance_factor = [0 for i in range(24)]
-
 
 
 class OnBeatBubble(InstructionGroup):
@@ -719,4 +712,4 @@ class OffBeatSpray(InstructionGroup):
 
 
 if __name__ == "__main__":
-    print(generate_sub_palette((0.9372549019607843, 0.3254901960784314, 0.3137254901960784)))
+    pass
