@@ -619,7 +619,7 @@ class SpectralBars(InstructionGroup):
 
 class Vertex(InstructionGroup):
     """Class to use in Prism"""
-    def __init__(self, pos, rgb, rad, a=1):
+    def __init__(self, pos, rgb, rad, a=0.8):
         super(Vertex, self).__init__()
         self.pos = pos
         self.rad = rad
@@ -629,28 +629,41 @@ class Vertex(InstructionGroup):
         self.color.a = self.alpha
         self.add(self.color)
 
-        self.dot = CEllipse(cpos=self.pos, csize=(2 * self.rad, 2 * self.rad), segments=10)
+        self.dot = CEllipse(cpos=self.pos, csize=(2 * self.rad, 2 * self.rad), segments=40)
         self.add(self.dot)
 
         self.touched = False
 
         self.time = 0
 
+    def on_beat(self):
+        """
+        Called by Prism, randomly moves a vertex
+
+        :return: new position (tuple)
+        """
+        old_pos = self.dot.cpos
+
+        # Randomly move the points and make sure they stay in the margins we set
+        new_x = old_pos[0] + choice((-1, 1)) * randint(5, 15)
+        if new_x < Window.width * 0.1:
+            new_x = Window.width * 0.1
+        elif new_x > Window.width * 0.9:
+            new_x = Window.width * 0.9
+
+        new_y = old_pos[1] + choice((-1, 1)) * randint(5, 15)
+        if new_y < Window.height * 0.2:
+            new_y = Window.height * 0.2
+        elif new_y > Window.height * 0.8:
+            new_y = Window.height * 0.8
+
+        self.dot.cpos = new_x, new_y
+        return new_x, new_y
+
     def on_touch(self):
-        """
-        Called by Prism when the mouse touches the vertex
-        Moves the point to a new place on screen
-        Returns coordinates of new vertex position
-        """
+        """Called by Prism when the mouse touches the vertex"""
         if not self.touched:
             self.touched = True
-            old_pos = self.dot.cpos
-            new_pos = (old_pos[0] + choice((-1, 1)) * randint(self.rad, self.rad * 4),
-                       old_pos[1] + choice((-1, 1)) * randint(self.rad, self.rad * 4))
-            self.dot.cpos = new_pos
-            return new_pos
-        else:
-            return None
 
     def on_tatum(self):
         pass
@@ -666,7 +679,7 @@ class Vertex(InstructionGroup):
 
 
 class Edge(InstructionGroup):
-    def __init__(self, points, color, width=1, a=1):
+    def __init__(self, points, color, width=1, a=0.5):
         super(Edge, self).__init__()
 
         self.color = Color(*color)
@@ -681,9 +694,9 @@ class Edge(InstructionGroup):
     def on_pulse(self):
         self.index += 1
         if self.index % 2 == 0:
-            self.line.width /= 1.5
+            self.line.width /= 3
         else:
-            self.line.width *= 1.5
+            self.line.width *= 3
 
 
 class Prism(InstructionGroup):
@@ -696,7 +709,7 @@ class Prism(InstructionGroup):
         super(Prism, self).__init__()
         v = 8  # number of vertices
 
-        self.vertex_rad = 10
+        self.vertex_rad = 20
         self.boundary = self.vertex_rad * 1.2  # Radial boundary for registering a touch on a vertex
 
         # Generate RGB palette
@@ -744,9 +757,34 @@ class Prism(InstructionGroup):
         return edges
 
     def on_beat(self):
-        """Pulse line width of the graph edges"""
+        """Moves the prism"""
+
+        # Remove the edges
         for e in self.edges:
-            e.on_pulse()
+            self.remove(e)
+
+        for coord, obj in self.vertices.items():
+            # Remove the vertices
+            self.remove(obj)
+
+            # Recalculate new position, move the point
+            new_pos = obj.on_beat()
+            self.vertices.pop(coord)
+
+            # Update the dictionary
+            self.vertices[new_pos] = obj
+
+        # Recalculate the edges
+        self.edges = self._gen_edges(self.vertices.keys())
+
+        # Redraw the edges
+        for e in self.edges:
+            self.add(e)
+
+        # Redraw the vertices
+        for v in self.vertices.values():
+            self.add(v)
+
 
     def on_segment(self, data):
         """Change size of the vertices based on timbre vector"""
@@ -769,19 +807,8 @@ class Prism(InstructionGroup):
             dot = np.array(v)
             dist = np.abs(np.linalg.norm(dot-np.array(self.mouse_pos)))
             if dist < self.boundary:
-                # Remove edges
-                for e in self.edges:
-                    self.remove(e)
-
-                # Move the vertex
-                new_pos = self.vertices[v].on_touch()
-                self.vertices[new_pos] = self.vertices[v]
-                self.vertices.pop(v)
-
-                # Redraw the edges
-                self.edges = self._gen_edges(self.vertices.keys())
-                for e in self.edges:
-                    self.add(e)
+                # Vertex is touched
+                self.vertices[v].on_touch()
 
 
 class OnBeatBubble(InstructionGroup):
