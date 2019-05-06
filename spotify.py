@@ -63,7 +63,6 @@ class Song:
                 self.segments_data.append(s)
                 self.segments.append((s['start'], s['duration']))
 
-        print(self.sections)
 
     def get_sections_data(self):
         return self.sections_data
@@ -92,6 +91,16 @@ class Song:
 
     def get_sections(self):
         return self.sections
+
+    def time_to_next_section(self, time):
+        i = self.get_section_index(time)
+        time /= 1000
+        if i == len(self.sections):
+            return -1
+        else:
+            next_time = self.sections[i+1][0]
+            return next_time - time
+
 
     def on_beat(self, time, threshold):
         """
