@@ -5,7 +5,7 @@ from common.gfxutil import *
 
 from kivy.core.window import Window, WindowBase
 from kivy.graphics.instructions import InstructionGroup
-from kivy.graphics import Color, Ellipse, Rectangle, Line, Triangle
+from kivy.graphics import Color, Ellipse, Rectangle, Line, Triangle, RoundedRectangle
 from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
 from kivy.core.image import Image
 
@@ -709,7 +709,7 @@ class SpectralBars(InstructionGroup):
                 color = self.colors[23-i]
             self.add(Color(rgb=color))
             pos = ( (i * self.bar_width) + (6 * self.bar_width), Window.height/4)
-            bar = Rectangle(pos = pos, size = (self.bar_width, self.bar_height))
+            bar = RoundedRectangle(pos = pos, size = (self.bar_width, self.bar_height))
             
             self.bars.append(bar)
 
