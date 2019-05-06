@@ -130,6 +130,7 @@ class User(InstructionGroup):
         
         section_index = self.audio.get_current_track().get_section_index(time)
         time_to_next = self.audio.get_current_track().get_time_to_next_section(time)
+
         if time_to_next < self.transition_time/1000 and not self.in_transition and time_to_next != -1:
 
             self.in_transition = True
@@ -211,8 +212,9 @@ class ModeTransition(InstructionGroup):
                 self.new_mode = self.mode2(self.color)
             self.remove(self.left)
             self.remove(self.right)
+            self.add(Color(rgb=(1.0, 1.0, 1.0)))
             self.add(self.new_mode)
-        else:
+        elif time < self.start_time + self.transition_time:
             if x_pos < Window.width / 2:
                 self.left_color.a = 0.5
                 self.right_color.a = 0.2
