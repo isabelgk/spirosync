@@ -179,7 +179,7 @@ class User(InstructionGroup):
 class ModeTransition(InstructionGroup):
     def __init__(self, color, mode1, mode2, start_time, transition_time):
         super(ModeTransition, self).__init__()
-        self.transition_time = transition_time * 2
+        self.transition_time = transition_time * 1.8
         self.color = color
         self.mode1 = mode1
         self.mode2 = mode2
