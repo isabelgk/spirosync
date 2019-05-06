@@ -186,24 +186,31 @@ class ModeTransition(InstructionGroup):
         self.start_time = start_time
         self.square_side = Window.width * 0.05
 
+        # Dictionary mapping mode instance to corresponding texture
+        self.mode_textures = {'Kaleidoscope': Image("res/Kaleidoscope.png").texture,
+                              'Prism': Image("res/Prism.png").texture,
+                              'PulsingBar': Image("res/PulsingBar.png").texture,
+                              'SpectralBars': Image("res/SpectralBars.png").texture,
+                              'Tunnel': Image('res/Tunnel.png').texture}
+
+
 
         self.new_mode = None
 
-        self.left_color = Color(rgba =(1.0, 1.0, 1.0, 0.2))
-        self.left = Rectangle(pos = (Window.width * 0.25, Window.height * 0.5 ), size = (Window.width * 0.1, Window.width * 0.1) )
+        self.left_color = Color(rgba =(1.0, 1.0, 1.0, 0.3))
+        self.left = Rectangle(pos = (Window.width * 0.25, Window.height * 0.5 ), size = (Window.width * 0.1, Window.width * 0.1), texture = self.mode_textures[self.mode1.__name__] )
         self.add(self.left_color)
         self.add(self.left)
 
 
-        self.right_color = Color(rgba = (1.0, 1.0, 1.0, 0.2))
-        self.right = Rectangle(pos = (Window.width * 0.65, Window.height * 0.5 ), size = (Window.width * 0.1, Window.width * 0.1) )
+        self.right_color = Color(rgba = (1.0, 1.0, 1.0, 0.3))
+        self.right = Rectangle(pos = (Window.width * 0.65, Window.height * 0.5 ), size = (Window.width * 0.1, Window.width * 0.1), texture = self.mode_textures[self.mode2.__name__] )
         self.add(self.right_color)
         self.add(self.right)
 
     def on_update(self, time):
         x_pos = Window.mouse_pos[0]
-        print("left: " + str(self.mode1))
-        print("right: " + str(self.mode2))
+
 
         if time > self.start_time + self.transition_time and not self.new_mode:
             if x_pos < Window.width / 2:
@@ -216,11 +223,11 @@ class ModeTransition(InstructionGroup):
             self.add(self.new_mode)
         elif time < self.start_time + self.transition_time:
             if x_pos < Window.width / 2:
-                self.left_color.a = 0.5
-                self.right_color.a = 0.2
+                self.left_color.a = 0.8
+                self.right_color.a = 0.3
             else:
-                self.right_color.a = 0.5
-                self.left_color.a = 0.2
+                self.right_color.a = 0.8
+                self.left_color.a = 0.3
 
         if self.new_mode:
             self.new_mode.on_update(time)
