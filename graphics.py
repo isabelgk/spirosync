@@ -404,7 +404,8 @@ class Kaleidoscope(InstructionGroup):
         height = Window.height-2*offset
 
         self.add(PushMatrix())
-        self.background = Rectangle(pos=((Window.width-height)/2,2*offset), size=(height, height), texture=Image('circle.png').texture)
+        self.background = Rectangle(pos=((Window.width-height)/2,2*offset), size=(height, height),
+                                    texture=Image('res/kaleidoscope/circle.png').texture)
         self.add(self.background)
 
         middle_y = 2*offset + height/2
@@ -412,7 +413,8 @@ class Kaleidoscope(InstructionGroup):
         self.rotate = Rotate(angle=0, origin=(Window.width/2,middle_y))
         self.add(self.rotate)
 
-        self.star = Rectangle(pos=((Window.width-height)/2,2*offset), size=(height, height), texture=Image('weird_star.png').texture)
+        self.star = Rectangle(pos=((Window.width-height)/2,2*offset), size=(height, height),
+                              texture=Image('res/kaleidoscope/weird_star.png').texture)
         self.add(self.star)
 
         self.add(PopMatrix())
