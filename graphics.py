@@ -5,8 +5,9 @@ from common.gfxutil import *
 
 from kivy.core.window import Window, WindowBase
 from kivy.graphics.instructions import InstructionGroup
-from kivy.graphics import Color, Ellipse, Rectangle, Line
+from kivy.graphics import Color, Ellipse, Rectangle, Line, Triangle
 from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
+from kivy.core.image import Image
 
 from random import random, choice, randint
 
@@ -75,14 +76,15 @@ class User(InstructionGroup):
         self.audio = spotify_song
         self.progress_bar = progress_bar
 
+        # list of all modes
+        self.modes = [PulsingBar, Tunnel, SpectralBars, Prism, Kaleidoscope]
+
         # the mode for each section
-        self.section_modes = [int( random() * 4) for i in range(len(self.audio.get_current_track().get_sections()))]
+        self.section_modes = [int( random() * len(self.modes)) for i in range(len(self.audio.get_current_track().get_sections()))]
+        #self.section_modes = [4 for i in range(len(self.audio.get_current_track().get_sections()))]
 
         # instance of current mode
         self.current_mode = None
-
-        # list of all modes
-        self.modes = [PulsingBar, Tunnel, SpectralBars, Prism]
 
         self.is_onbeat = False
         self.last_beat = 0
@@ -300,6 +302,42 @@ class AmbientBackgroundCircles(InstructionGroup):
 # ==================================
 # Visualizer modes
 # ==================================
+
+class Kaleidoscope(InstructionGroup):
+    def __init__(self, color):
+        super(Kaleidoscope, self).__init__()
+        offset = Window.width * 0.05
+        height = Window.height-2*offset
+
+        self.add(PushMatrix())
+        self.background = Rectangle(pos=((Window.width-height)/2,2*offset), size=(height, height), texture=Image('circle.png').texture)
+        self.add(self.background)
+
+        middle_y = 2*offset + height/2
+
+        self.rotate = Rotate(angle=0, origin=(Window.width/2,middle_y))
+        self.add(self.rotate)
+
+        self.star = Rectangle(pos=((Window.width-height)/2,2*offset), size=(height, height), texture=Image('weird_star.png').texture)
+        self.add(self.star)
+
+        self.add(PopMatrix())
+
+    def on_touch_move(self):
+        pass
+
+    def on_beat(self):
+        self.rotate.angle += 10
+
+    def on_segment(self, data):
+        # data gives loudness_start, loudness_max_time, loudness_max, loudness_end, pitches, timbre
+        pass
+
+    def on_tatum(self):
+        pass
+
+    def on_update(self, time):
+        pass
 
 class PulsingBar(InstructionGroup):
     def __init__(self, color):
@@ -951,6 +989,29 @@ class OffBeatSpray(InstructionGroup):
                            dot.pos[1] + choice((-1, 1)) * random() * 2)
         self.translate.x = self.translate.x - 10
 
+class MainWidget(BaseWidget):
+    def __init__(self):
+        super(MainWidget, self).__init__()
+
+        self.kaleidoscope = Kaleidoscope()
+        self.canvas.add(self.kaleidoscope)
+
+        # Static text display
+        self.info = topleft_label(font_filepath="res/font/CabinCondensed-Regular.ttf")
+        self.add_widget(self.info)
+
+        
+    def on_key_down(self, keycode, modifiers):
+        pass
+
+    def on_touch_move(self, touch) :
+        # apply rotation
+        p = touch.pos
+        self.kaleidoscope.on_touch_move(p)
+
+    def on_update(self):
+        pass
+
 
 if __name__ == "__main__":
-    pass
+    run(MainWidget)
