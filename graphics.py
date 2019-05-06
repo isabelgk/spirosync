@@ -130,8 +130,8 @@ class User(InstructionGroup):
         
         section_index = self.audio.get_current_track().get_section_index(time)
         time_to_next = self.audio.get_current_track().get_time_to_next_section(time)
-        if time_to_next < self.transition_time/1000 and not self.in_transition:
-            print('starting transition')
+        if time_to_next < self.transition_time/1000 and not self.in_transition and time_to_next != -1:
+
             self.in_transition = True
 
             color = self.progress_bar.get_section_color(section_index + 1)
