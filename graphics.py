@@ -323,7 +323,7 @@ class Kaleidoscope(InstructionGroup):
 
         self.add(PopMatrix())
 
-    def on_touch_move(self):
+    def on_touch_move(self, touch):
         pass
 
     def on_beat(self):
@@ -354,7 +354,7 @@ class PulsingBar(InstructionGroup):
 
         self.on_beat_time = None
 
-    def on_touch_move(self):
+    def on_touch_move(self, touch):
         pass
 
     def on_beat(self):
@@ -567,7 +567,7 @@ class Tunnel(InstructionGroup):
     def on_tatum(self):
         pass
 
-    def on_touch_move(self):
+    def on_touch_move(self, touch):
         pass
 
     def on_update(self, time):
@@ -643,7 +643,7 @@ class SpectralBars(InstructionGroup):
             left_translate.y = timbre[i] 
             right_translate.y = timbre[i] 
 
-    def on_touch_move(self):
+    def on_touch_move(self, touch):
         pass
 
     def on_tatum(self):

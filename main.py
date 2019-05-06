@@ -19,9 +19,9 @@ class MainWidget(BaseWidget):
     def __init__(self):
         super(MainWidget, self).__init__()
 
-        self.audio = Audio('1235254187')  # Serena
-        # self.audio = Audio("isabelkaspriskie")  # Isabel
-        #self.audio = Audio("shann0nduffy")  # Shannon
+        # self.audio = Audio('1235254187')  # Serena
+        self.audio = Audio("isabelkaspriskie")  # Isabel
+        # self.audio = Audio("shann0nduffy")  # Shannon
 
         self.background = AmbientBackgroundCircles(alpha=0.4, num_circles=20)
         self.canvas.add(self.background)
