@@ -92,14 +92,15 @@ class Song:
     def get_sections(self):
         return self.sections
 
-    def time_to_next_section(self, time):
+    def get_time_to_next_section(self, time):
         i = self.get_section_index(time)
         time /= 1000
-        if i == len(self.sections):
+        if i >= len(self.sections) - 1:
             return -1
         else:
             next_time = self.sections[i+1][0]
             return next_time - time
+
 
 
     def on_beat(self, time, threshold):
