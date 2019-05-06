@@ -9,7 +9,7 @@ from kivy.graphics import Color, Ellipse, Rectangle, Line, Triangle
 from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
 from kivy.core.image import Image
 
-from random import random, choice, randint
+from random import random, choice, randint, shuffle
 
 import colorsys
 import itertools
@@ -89,6 +89,9 @@ class User(InstructionGroup):
         self.is_onbeat = False
         self.last_beat = 0
 
+        self.in_transition = False
+        self.transition_time = 2000
+
         # count the number of iterations that have been on beat
         self.num_beats = 0
 
@@ -124,17 +127,37 @@ class User(InstructionGroup):
 
         self.is_onbeat = self.audio.get_current_track().on_beat(self.time, 0.1)
 
+        
         section_index = self.audio.get_current_track().get_section_index(time)
-        if section_index != self.current_section:
-            # new section 
-            # print(section_index)
-            new_mode = self.modes[self.section_modes[section_index]](self.progress_bar.get_section_color(section_index))
+        time_to_next = self.audio.get_current_track().get_time_to_next_section(time)
+        if time_to_next < self.transition_time/1000 and not self.in_transition:
+            print('starting transition')
+            self.in_transition = True
+
+            color = self.progress_bar.get_section_color(section_index + 1)
+            shuffle(self.modes)
+            new_mode = ModeTransition(color, self.modes[0], self.modes[1], self.time, self.transition_time)
+
             if self.current_mode:
                 self.remove(self.current_mode)
             self.add(new_mode)
 
             self.current_mode = new_mode
-            self.current_section = section_index
+            self.current_section = section_index + 1
+
+        self.in_transition = self.current_mode.in_transition(self.time, self.transition_time)
+
+
+        # if section_index != self.current_section:
+        #     # new section 
+        #     # print(section_index)
+        #     new_mode = self.modes[self.section_modes[section_index]](self.progress_bar.get_section_color(section_index))
+        #     if self.current_mode:
+        #         self.remove(self.current_mode)
+        #     self.add(new_mode)
+
+        #     self.current_mode = new_mode
+        #     self.current_section = section_index
 
         if self.is_onbeat:
             self.num_beats += 1
@@ -152,6 +175,75 @@ class User(InstructionGroup):
 
         self.current_mode.on_update(self.time)
 
+class ModeTransition(InstructionGroup):
+    def __init__(self, color, mode1, mode2, start_time, transition_time):
+        super(ModeTransition, self).__init__()
+        self.transition_time = transition_time * 2
+        self.color = color
+        self.mode1 = mode1
+        self.mode2 = mode2
+        self.start_time = start_time
+        self.square_side = Window.width * 0.05
+
+
+        self.new_mode = None
+
+        self.left_color = Color(rgba =(1.0, 1.0, 1.0, 0.2))
+        self.left = Rectangle(pos = (Window.width * 0.25, Window.height * 0.5 ), size = (Window.width * 0.1, Window.width * 0.1) )
+        self.add(self.left_color)
+        self.add(self.left)
+
+
+        self.right_color = Color(rgba = (1.0, 1.0, 1.0, 0.2))
+        self.right = Rectangle(pos = (Window.width * 0.65, Window.height * 0.5 ), size = (Window.width * 0.1, Window.width * 0.1) )
+        self.add(self.right_color)
+        self.add(self.right)
+
+    def on_update(self, time):
+        x_pos = Window.mouse_pos[0]
+        print("left: " + str(self.mode1))
+        print("right: " + str(self.mode2))
+
+        if time > self.start_time + self.transition_time and not self.new_mode:
+            if x_pos < Window.width / 2:
+                self.new_mode = self.mode1(self.color)
+            else:
+                self.new_mode = self.mode2(self.color)
+            self.remove(self.left)
+            self.remove(self.right)
+            self.add(self.new_mode)
+        else:
+            if x_pos < Window.width / 2:
+                self.left_color.a = 0.5
+                self.right_color.a = 0.2
+            else:
+                self.right_color.a = 0.5
+                self.left_color.a = 0.2
+
+        if self.new_mode:
+            self.new_mode.on_update(time)
+
+
+
+    def on_touch_move(self, touch):
+        if self.new_mode:
+            self.new_mode.on_touch_move(touch)
+
+    def on_beat(self):
+        if self.new_mode:
+            self.new_mode.on_beat()
+
+    def on_segment(self, data):
+        if self.new_mode:
+            self.new_mode.on_segment(data)
+
+    def on_tatum(self):
+        if self.new_mode:
+            self.new_mode.on_tatum()
+
+    def in_transition(self, time, transition_time):
+
+        return time < self.start_time + transition_time
 
 class ProgressBar(InstructionGroup):
     """Graphics representing progress bar. Animates the fraction of the song that has played"""
@@ -323,7 +415,7 @@ class Kaleidoscope(InstructionGroup):
 
         self.add(PopMatrix())
 
-    def on_touch_move(self):
+    def on_touch_move(self, touch):
         pass
 
     def on_beat(self):
@@ -354,7 +446,7 @@ class PulsingBar(InstructionGroup):
 
         self.on_beat_time = None
 
-    def on_touch_move(self):
+    def on_touch_move(self, touch):
         pass
 
     def on_beat(self):
@@ -567,7 +659,7 @@ class Tunnel(InstructionGroup):
     def on_tatum(self):
         pass
 
-    def on_touch_move(self):
+    def on_touch_move(self, touch):
         pass
 
     def on_update(self, time):
@@ -643,7 +735,7 @@ class SpectralBars(InstructionGroup):
             left_translate.y = timbre[i] 
             right_translate.y = timbre[i] 
 
-    def on_touch_move(self):
+    def on_touch_move(self, touch):
         pass
 
     def on_tatum(self):
