@@ -96,7 +96,7 @@ class User(InstructionGroup):
         self.num_beats = 0
 
         self.current_segment = 0
-        self.current_section = 0
+        self.current_section = -1
 
         # Time keeping
         # self.duration = duration
@@ -129,6 +129,10 @@ class User(InstructionGroup):
 
         
         section_index = self.audio.get_current_track().get_section_index(time)
+
+        if section_index == -1:
+            return
+            
         time_to_next = self.audio.get_current_track().get_time_to_next_section(time)
 
         if time_to_next < self.transition_time/1000 and not self.in_transition and time_to_next != -1:
@@ -145,6 +149,21 @@ class User(InstructionGroup):
 
             self.current_mode = new_mode
             self.current_section = section_index + 1
+
+        elif section_index != self.current_section and not self.in_transition and section_index != -1:
+            self.in_transition = True
+
+            color = self.progress_bar.get_section_color(section_index)
+            shuffle(self.modes)
+            new_mode = ModeTransition(color, self.modes[0], self.modes[1], self.time, self.transition_time)
+
+            if self.current_mode:
+                self.remove(self.current_mode)
+            self.add(new_mode)
+
+            self.current_mode = new_mode
+            self.current_section = section_index
+
 
         self.in_transition = self.current_mode.in_transition(self.time, self.transition_time)
 
@@ -179,7 +198,7 @@ class User(InstructionGroup):
 class ModeTransition(InstructionGroup):
     def __init__(self, color, mode1, mode2, start_time, transition_time):
         super(ModeTransition, self).__init__()
-        self.transition_time = transition_time * 1.8
+        self.transition_time = transition_time  * 1.5
         self.color = color
         self.mode1 = mode1
         self.mode2 = mode2
