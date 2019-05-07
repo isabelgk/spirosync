@@ -173,16 +173,23 @@ class Audio:
         
         self.current_playback_data = self.sp.current_playback()
         if self.current_playback_data:
-            self.current_track = Song(self.sp, self.current_playback_data['item']['id'],
-            self.current_playback_data['item']['duration_ms'])
+            self.current_track = Song(self.sp, self.current_playback_data['item']['id'], self.current_playback_data['item']['duration_ms'])
             self.song_name = self.current_playback_data['item']['name']
             for artist in self.current_playback_data['item']['artists']:
                     self.artists.append(artist['name'])
 
     def get_song_name(self):
+        playback = self.sp.current_playback()
+        if playback:
+            self.song_name = playback['item']['name']
         return self.song_name
 
     def get_artists(self):
+        self.artists = []
+        playback = self.sp.current_playback()
+        if playback:
+            for artist in playback['item']['artists']:
+                self.artists.append(artist['name'])
         return self.artists
 
     def get_spotify(self):
@@ -217,3 +224,4 @@ class Audio:
             return False
         else:
             return True
+
