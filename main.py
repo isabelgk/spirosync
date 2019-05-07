@@ -105,8 +105,11 @@ class MainWidget(BaseWidget):
             self.progress = self.time / self.audio.current_track.duration
 
             self.sections = self.audio.get_current_track().get_sections_data()
+
+
             self.duration = self.audio.get_current_track().duration
             self.canvas.remove(self.progress_bar)
+
             self.progress_bar = ProgressBar(self.sections, self.duration)
             self.ui.update_progress_bar(self.progress_bar)
 
@@ -115,6 +118,8 @@ class MainWidget(BaseWidget):
 
             self.name = song_name
             #self.progress_bar.update_song(self.sections, self.duration)
+
+            self.time = song_time
 
         self.info.text = ''
         self.info.text += 'time: %.2f\n' % self.time
