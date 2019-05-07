@@ -118,6 +118,9 @@ class User(InstructionGroup):
         else:
             self.play = True
 
+    def update_progress_bar(self, progress_bar):
+        self.progress_bar = progress_bar
+        
     def on_touch_move(self, touch):
         if self.current_mode:
             self.current_mode.on_touch_move(touch)
@@ -132,7 +135,7 @@ class User(InstructionGroup):
 
         if section_index == -1:
             return
-            
+
         time_to_next = self.audio.get_current_track().get_time_to_next_section(time)
 
         if time_to_next < self.transition_time/1000 and not self.in_transition and time_to_next != -1:
