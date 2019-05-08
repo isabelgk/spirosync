@@ -354,12 +354,11 @@ class ProgressBar(InstructionGroup):
 
 
 class FloatingShape(InstructionGroup):
-    def __init__(self, cpos, dim, shape="rect"):
+    def __init__(self, cpos, dim, shape="a"):
         super().__init__()
 
         self.shape = shape
         tex_file = 'res/background/%s%d.png' % (self.shape, randint(1, 4))
-        print(tex_file)
 
         self.buffer = dim[1] / 2
 

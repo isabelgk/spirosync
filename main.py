@@ -22,8 +22,8 @@ class MainWidget(BaseWidget):
     def __init__(self):
         super(MainWidget, self).__init__()
 
-        self.audio = Audio('1235254187')  # Serena
-        # self.audio = Audio("isabelkaspriskie")  # Isabel
+        # self.audio = Audio('1235254187')  # Serena
+        self.audio = Audio("isabelkaspriskie")  # Isabel
         # self.audio = Audio("shann0nduffy")  # Shannon
 
         self.background = AmbientBackgroundBlobs(alpha=0.4, num_shapes=20)
