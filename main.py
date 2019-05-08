@@ -26,9 +26,6 @@ class MainWidget(BaseWidget):
         self.audio = Audio("isabelkaspriskie")  # Isabel
         # self.audio = Audio("shann0nduffy")  # Shannon
 
-        self.background = AmbientBackgroundBlobs(alpha=0.4, num_shapes=20)
-        self.canvas.add(self.background)
-
         self.sections = self.audio.get_current_track().get_sections_data()
         self.duration = self.audio.get_current_track().duration
 
@@ -130,7 +127,6 @@ class MainWidget(BaseWidget):
         self.song_info.text +=  str(self.audio.artists) + '\n'
 
         self.ui.on_update(self.time)
-        self.background.on_update(self.time)
         self.progress_bar.on_update(self.progress)
 
         # print(self.audio.get_current_track().get_section_index(self.time))

@@ -76,12 +76,22 @@ class User(InstructionGroup):
         self.audio = spotify_song
         self.progress_bar = progress_bar
 
+        num_sections = len(self.audio.get_current_track().get_sections())
+
+        # list of all background "shape" categories
+        self.backgrounds = ["a", "b", "c", "d"]
+
+        # the background for each section is random
+        self.section_backgrounds = [int(random() * len(self.backgrounds)) for _ in range(num_sections)]
+
+        # instance of current background
+        self.current_background = None
+
         # list of all modes
         self.modes = [PulsingBar, Tunnel, SpectralBars, Prism, Kaleidoscope]
 
         # the mode for each section
-        self.section_modes = [int( random() * len(self.modes)) for i in range(len(self.audio.get_current_track().get_sections()))]
-        #self.section_modes = [4 for i in range(len(self.audio.get_current_track().get_sections()))]
+        self.section_modes = [int(random() * len(self.modes)) for _ in range(num_sections)]
 
         # instance of current mode
         self.current_mode = None
@@ -90,7 +100,7 @@ class User(InstructionGroup):
         self.last_beat = 0
 
         self.in_transition = False
-        self.transition_time = 2000
+        self.transition_time = 2000  # ms
 
         # count the number of iterations that have been on beat
         self.num_beats = 0
@@ -99,8 +109,6 @@ class User(InstructionGroup):
         self.current_section = -1
 
         # Time keeping
-        # self.duration = duration
-        # self.speed = speed
         self.time = 0
         self.on_update(0)
 
@@ -130,7 +138,6 @@ class User(InstructionGroup):
 
         self.is_onbeat = self.audio.get_current_track().on_beat(self.time, 0.1)
 
-        
         section_index = self.audio.get_current_track().get_section_index(time)
 
         if section_index == -1:
@@ -139,8 +146,14 @@ class User(InstructionGroup):
         time_to_next = self.audio.get_current_track().get_time_to_next_section(time)
 
         if time_to_next < self.transition_time/1000 and not self.in_transition and time_to_next != -1:
-
             self.in_transition = True
+
+            new_background = AmbientBackgroundBlobs(shape=choice(self.backgrounds))
+            if self.current_background:
+                self.remove(self.current_background)
+            self.add(new_background)
+
+            self.current_background = new_background
 
             color = self.progress_bar.get_section_color(section_index + 1)
             shuffle(self.modes)
@@ -155,6 +168,13 @@ class User(InstructionGroup):
 
         elif section_index != self.current_section and not self.in_transition and section_index != -1:
             self.in_transition = True
+
+            new_background = AmbientBackgroundBlobs(shape=choice(self.backgrounds))
+            if self.current_background:
+                self.remove(self.current_background)
+            self.add(new_background)
+
+            self.current_background = new_background
 
             color = self.progress_bar.get_section_color(section_index)
             shuffle(self.modes)
@@ -197,6 +217,8 @@ class User(InstructionGroup):
             self.current_mode.on_segment(data)
 
         self.current_mode.on_update(self.time)
+        self.current_background.on_update(self.time)
+
 
 class ModeTransition(InstructionGroup):
     def __init__(self, color, mode1, mode2, start_time, transition_time):
@@ -276,6 +298,7 @@ class ModeTransition(InstructionGroup):
 
         return time < self.start_time + transition_time
 
+
 class ProgressBar(InstructionGroup):
     """Graphics representing progress bar. Animates the fraction of the song that has played"""
 
@@ -354,7 +377,7 @@ class ProgressBar(InstructionGroup):
 
 
 class FloatingShape(InstructionGroup):
-    def __init__(self, cpos, dim, shape="a"):
+    def __init__(self, cpos, dim, shape):
         super().__init__()
 
         self.shape = shape
@@ -416,7 +439,7 @@ class FloatingShape(InstructionGroup):
 
 class AmbientBackgroundBlobs(InstructionGroup):
     """Light colored fading"""
-    def __init__(self, alpha=0.2, num_shapes=20):
+    def __init__(self, shape, alpha=0.2, num_shapes=20):
         super().__init__()
 
         color = Color(*kPalette['gray800'])
@@ -427,7 +450,7 @@ class AmbientBackgroundBlobs(InstructionGroup):
         for i in range(num_shapes):
             rad = randint(int(Window.width/10), int(Window.width/3))
             pos = random() * Window.width, random() * Window.height
-            blob = FloatingShape(pos, (rad, rad))
+            blob = FloatingShape(pos, (rad, rad), shape)
             self.blobs.append(blob)
             self.add(blob)
 
