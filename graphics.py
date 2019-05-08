@@ -353,73 +353,89 @@ class ProgressBar(InstructionGroup):
         self.progress_mark.pos = ((self.length * progress) + self.buffer, self.buffer)
 
 
-class FloatingCircle(InstructionGroup):
-    def __init__(self, pos, r):
+class FloatingShape(InstructionGroup):
+    def __init__(self, cpos, dim, shape="rect"):
         super().__init__()
 
-        self.radius = r
-        self.pos = np.array(pos, dtype=np.float)
-        self.vel = np.array((choice([-1, 1])*randint(50, 200), choice([-1, 1])*randint(50, 200)), dtype=np.float)
+        self.shape = shape
+        tex_file = 'res/background/%s%d.png' % (self.shape, randint(1, 4))
+        print(tex_file)
 
-        self.circle = CEllipse(cpos=pos, csize=(2*r, 2*r), segments=40)
-        self.add(self.circle)
+        self.buffer = dim[1] / 2
+
+        self.dim = np.array(dim, dtype=np.float)
+        self.cpos = cpos
+        self.pos = np.array([cpos[0] - 0.5 * dim[0], cpos[1] - 0.5 * dim[1]])
+        self.vel = np.array((choice([-1, 1]) * randint(50, 200), choice([-1, 1]) * randint(50, 200)), dtype=np.float)
+
+        self.add(PushMatrix())
+
+        self.rotate = Rotate(origin=self.pos, angle=randint(0, 359))
+        self.add(self.rotate)
+
+        self.shape = Rectangle(size=dim, texture=Image(tex_file).texture, pos=self.pos)
+        self.add(self.shape)
+
+        self.add(PopMatrix())
 
         self.time = 0
         self.on_update(0)
 
     def on_update(self, time):
-        dt = (time - self.time)/1000
+        dt = (time - self.time) / 1000
         self.time = time
 
         # integrate vel to get pos
         self.pos += self.vel * dt
+        self.rotate.angle += random()
 
         # collision with bottom
-        if self.pos[1] < - self.radius:
+        if self.pos[1] < - self.buffer:
             self.vel[1] = -self.vel[1]
-            self.pos[1] = - self.radius
+            self.pos[1] = - self.buffer
 
         # collision with top
-        if self.pos[1] > Window.height + self.radius:
+        if self.pos[1] > Window.height + self.buffer:
             self.vel[1] = - self.vel[1]
-            self.pos[1] = Window.height + self.radius
+            self.pos[1] = Window.height + self.buffer
 
         # collision with left side
-        if self.pos[0] < -self.radius :
+        if self.pos[0] < -self.buffer:
             self.vel[0] = - self.vel[0]
-            self.pos[0] = - self.radius
+            self.pos[0] = - self.buffer
 
         # collision with right side
-        if self.pos[0] > Window.width + self.radius:
+        if self.pos[0] > Window.width + self.buffer:
             self.vel[0] = - self.vel[0]
-            self.pos[0] = Window.width + self.radius
+            self.pos[0] = Window.width + self.buffer
 
-        self.circle.cpos = self.pos
+        self.shape.pos = self.pos
+        self.rotate.origin = self.pos
 
         return True
 
 
-class AmbientBackgroundCircles(InstructionGroup):
+class AmbientBackgroundBlobs(InstructionGroup):
     """Light colored fading"""
-    def __init__(self, alpha=0.2, num_circles=20):
+    def __init__(self, alpha=0.2, num_shapes=20):
         super().__init__()
 
         color = Color(*kPalette['gray800'])
         color.a = alpha
         self.add(color)
 
-        self.circles = []
-        for i in range(num_circles):
-            rad = randint(200, 400)
+        self.blobs = []
+        for i in range(num_shapes):
+            rad = randint(int(Window.width/10), int(Window.width/3))
             pos = random() * Window.width, random() * Window.height
-            circle = FloatingCircle(pos, rad)
-            self.circles.append(circle)
-            self.add(circle)
+            blob = FloatingShape(pos, (rad, rad))
+            self.blobs.append(blob)
+            self.add(blob)
 
     def on_update(self, time):
-        for circle in self.circles:
+        for blob in self.blobs:
             # Move around randomly
-            circle.on_update(time)
+            blob.on_update(time)
 
 
 # ==================================

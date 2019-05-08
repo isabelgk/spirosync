@@ -26,7 +26,7 @@ class MainWidget(BaseWidget):
         # self.audio = Audio("isabelkaspriskie")  # Isabel
         # self.audio = Audio("shann0nduffy")  # Shannon
 
-        self.background = AmbientBackgroundCircles(alpha=0.4, num_circles=20)
+        self.background = AmbientBackgroundBlobs(alpha=0.4, num_shapes=20)
         self.canvas.add(self.background)
 
         self.sections = self.audio.get_current_track().get_sections_data()
