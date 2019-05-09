@@ -21,22 +21,22 @@ import numpy as np
 # ==================================
 
 kSpeed = 5000  # pixels/sec
-kPalette = {'red400': (0.9372549019607843, 0.3254901960784314, 0.3137254901960784),
-            'pink400': (0.9254901960784314, 0.25098039215686274, 0.47843137254901963),
+kPalette = {'pink400': (0.9254901960784314, 0.25098039215686274, 0.47843137254901963),
+            'red400': (0.9372549019607843, 0.3254901960784314, 0.3137254901960784),
+            'orange400': (1.0, 0.6549019607843137, 0.14901960784313725),
+            'deep_orange400': (1.0, 0.4392156862745098, 0.2627450980392157),
+            'amber400': (1.0, 0.792156862745098, 0.1568627450980392),
+            'yellow400': (1.0, 0.9333333333333333, 0.34509803921568627),
+            'light_green400': (0.611764705882353, 0.8, 0.396078431372549),
+            'lime400': (0.8313725490196079, 0.8823529411764706, 0.3411764705882353),
+            'green400': (0.4, 0.7333333333333333, 0.41568627450980394),
+            'teal400': (0.14901960784313725, 0.6509803921568628, 0.6039215686274509),
+            'light_blue400': (0.1607843137254902, 0.7137254901960784, 0.9647058823529412),
+            'cyan400': (0.14901960784313725, 0.7764705882352941, 0.8549019607843137),
+            'blue400': (0.25882352941176473, 0.6470588235294118, 0.9607843137254902),
             'purple400': (0.6705882352941176, 0.2784313725490196, 0.7372549019607844),
             'deep_purple400': (0.49411764705882355, 0.3411764705882353, 0.7607843137254902),
             'indigo400': (0.3607843137254902, 0.4196078431372549, 0.7529411764705882),
-            'blue400': (0.25882352941176473, 0.6470588235294118, 0.9607843137254902),
-            'light_blue400': (0.1607843137254902, 0.7137254901960784, 0.9647058823529412),
-            'cyan400': (0.14901960784313725, 0.7764705882352941, 0.8549019607843137),
-            'teal400': (0.14901960784313725, 0.6509803921568628, 0.6039215686274509),
-            'green400': (0.4, 0.7333333333333333, 0.41568627450980394),
-            'light_green400': (0.611764705882353, 0.8, 0.396078431372549),
-            'lime400': (0.8313725490196079, 0.8823529411764706, 0.3411764705882353),
-            'yellow400': (1.0, 0.9333333333333333, 0.34509803921568627),
-            'amber400': (1.0, 0.792156862745098, 0.1568627450980392),
-            'orange400': (1.0, 0.6549019607843137, 0.14901960784313725),
-            'deep_orange400': (1.0, 0.4392156862745098, 0.2627450980392157),
             'brown400': (0.5529411764705883, 0.43137254901960786, 0.38823529411764707),
             'blue_gray400': (0.47058823529411764, 0.5647058823529412, 0.611764705882353),
             'gray50': (0.9803921568627451, 0.9803921568627451, 0.9803921568627451),
@@ -80,8 +80,8 @@ class User(InstructionGroup):
         self.modes = [PulsingBar, Tunnel, SpectralBars, Prism, Kaleidoscope]
 
         # the mode for each section
-        self.section_modes = [int( random() * len(self.modes)) for i in range(len(self.audio.get_current_track().get_sections()))]
-        #self.section_modes = [4 for i in range(len(self.audio.get_current_track().get_sections()))]
+        # self.section_modes = [int( random() * len(self.modes)) for i in range(len(self.audio.get_current_track().get_sections()))]
+        self.section_modes = [4 for i in range(len(self.audio.get_current_track().get_sections()))]
 
         # instance of current mode
         self.current_mode = None
@@ -168,20 +168,22 @@ class ProgressBar(InstructionGroup):
         self.section_color = []
         self.bars = []
         start_pos = self.buffer
+
+        colors = list(kPalette.values())
+        colors.remove(kPalette['gray50'])  # Don't use the grays/brown in the section bars
+        colors.remove(kPalette['blue_gray400'])
+        colors.remove(kPalette['gray900'])
+        colors.remove(kPalette['gray800'])
+        colors.remove(kPalette['gray400'])
+        colors.remove(kPalette['brown400'])
+
+        section_loudness = [section['loudness'] for section in self.sections]
+
         for section in self.sections:
-
-            # For now, use a random color for the section.
-            colors = list(kPalette.values())
-            colors.remove(kPalette['gray50'])  # Don't use the grays/brown in the section bars
-            colors.remove(kPalette['blue_gray400'])
-            colors.remove(kPalette['gray900'])
-            colors.remove(kPalette['gray800'])
-            colors.remove(kPalette['gray400'])
-            colors.remove(kPalette['brown400'])
-
-            color = choice(colors)
-            self.section_color.append(color)
-            self.add(Color(rgb = color))
+            # index into the color list based on how loud the current section is compared to the min and max loudness
+            color_index = int(((section['loudness']-max(section_loudness))*(len(colors)-1)) / (min(section_loudness)-max(section_loudness)))
+            self.section_color.append(colors[color_index])
+            self.add(Color(rgb = colors[color_index]))
 
             section_length = section['duration'] * 1000
             bar_length = self.length * (section_length / self.duration)
@@ -309,6 +311,8 @@ class Kaleidoscope(InstructionGroup):
         offset = Window.width * 0.05
         height = Window.height-2*offset
 
+
+
         self.add(PushMatrix())
         self.background = Rectangle(pos=((Window.width-height)/2,2*offset), size=(height, height), texture=Image('circle.png').texture)
         self.add(self.background)
@@ -322,6 +326,12 @@ class Kaleidoscope(InstructionGroup):
         self.add(self.star)
 
         self.add(PopMatrix())
+
+        self.circle = CEllipse(cpos=(Window.width/2,middle_y), csize=(height,height))
+        self.color = Color(*color)
+        self.color.a = 0.5
+        self.add(self.color)
+        self.add(self.circle)
 
     def on_touch_move(self, touch):
         pass
