@@ -5,11 +5,11 @@ from common.gfxutil import *
 
 from kivy.core.window import Window, WindowBase
 from kivy.graphics.instructions import InstructionGroup
-from kivy.graphics import Color, Ellipse, Rectangle, Line, Triangle
+from kivy.graphics import Color, Ellipse, Rectangle, Line, Triangle, RoundedRectangle
 from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
 from kivy.core.image import Image
 
-from random import random, choice, randint
+from random import random, choice, randint, shuffle
 
 import colorsys
 import itertools
@@ -76,12 +76,23 @@ class User(InstructionGroup):
         self.audio = spotify_song
         self.progress_bar = progress_bar
 
+        num_sections = len(self.audio.get_current_track().get_sections())
+
+        # list of all background "shape" categories
+        self.backgrounds = ["a", "b", "c", "d"]
+
+        # the background for each section is random
+        self.section_backgrounds = [int(random() * len(self.backgrounds)) for _ in range(num_sections)]
+
+        # instance of current background
+        self.current_background = None
+
         # list of all modes
         self.modes = [PulsingBar, Tunnel, SpectralBars, Prism, Kaleidoscope]
 
         # the mode for each section
-        # self.section_modes = [int( random() * len(self.modes)) for i in range(len(self.audio.get_current_track().get_sections()))]
-        self.section_modes = [4 for i in range(len(self.audio.get_current_track().get_sections()))]
+        self.section_modes = [int( random() * len(self.modes)) for i in range(len(self.audio.get_current_track().get_sections()))]
+        # self.section_modes = [4 for i in range(len(self.audio.get_current_track().get_sections()))]
 
         # instance of current mode
         self.current_mode = None
@@ -89,15 +100,16 @@ class User(InstructionGroup):
         self.is_onbeat = False
         self.last_beat = 0
 
+        self.in_transition = False
+        self.transition_time = 2000  # ms
+
         # count the number of iterations that have been on beat
         self.num_beats = 0
 
         self.current_segment = 0
-        self.current_section = 0
+        self.current_section = -1
 
         # Time keeping
-        # self.duration = duration
-        # self.speed = speed
         self.time = 0
         self.on_update(0)
 
@@ -115,6 +127,9 @@ class User(InstructionGroup):
         else:
             self.play = True
 
+    def update_progress_bar(self, progress_bar):
+        self.progress_bar = progress_bar
+        
     def on_touch_move(self, touch):
         if self.current_mode:
             self.current_mode.on_touch_move(touch)
@@ -125,16 +140,68 @@ class User(InstructionGroup):
         self.is_onbeat = self.audio.get_current_track().on_beat(self.time, 0.1)
 
         section_index = self.audio.get_current_track().get_section_index(time)
-        if section_index != self.current_section:
-            # new section 
-            # print(section_index)
-            new_mode = self.modes[self.section_modes[section_index]](self.progress_bar.get_section_color(section_index))
+
+        if section_index == -1:
+            return
+
+        time_to_next = self.audio.get_current_track().get_time_to_next_section(time)
+
+        if time_to_next < self.transition_time/1000 and not self.in_transition and time_to_next != -1:
+            self.in_transition = True
+
+            new_background = AmbientBackgroundBlobs(shape=choice(self.backgrounds))
+            if self.current_background:
+                self.remove(self.current_background)
+            self.add(new_background)
+
+            self.current_background = new_background
+
+            color = self.progress_bar.get_section_color(section_index + 1)
+            shuffle(self.modes)
+            new_mode = ModeTransition(color, self.modes[0], self.modes[1], self.time, self.transition_time)
+
+            if self.current_mode:
+                self.remove(self.current_mode)
+            self.add(new_mode)
+
+            self.current_mode = new_mode
+            self.current_section = section_index + 1
+
+        elif section_index != self.current_section and not self.in_transition and section_index != -1:
+            self.in_transition = True
+
+            new_background = AmbientBackgroundBlobs(shape=choice(self.backgrounds))
+            if self.current_background:
+                self.remove(self.current_background)
+            self.add(new_background)
+
+            self.current_background = new_background
+
+            color = self.progress_bar.get_section_color(section_index)
+            shuffle(self.modes)
+            new_mode = ModeTransition(color, self.modes[0], self.modes[1], self.time, self.transition_time)
+
             if self.current_mode:
                 self.remove(self.current_mode)
             self.add(new_mode)
 
             self.current_mode = new_mode
             self.current_section = section_index
+
+
+        self.in_transition = self.current_mode.in_transition(self.time, self.transition_time)
+
+
+        # if section_index != self.current_section:
+        #     # new section 
+        #     # print(section_index)
+        #     new_mode = self.modes[self.section_modes[section_index]](self.progress_bar.get_section_color(section_index))
+        #     if self.current_mode:
+        #         self.remove(self.current_mode)
+        #     self.add(new_mode)
+
+        #     self.current_mode = new_mode
+        #     self.current_section = section_index
 
         if self.is_onbeat:
             self.num_beats += 1
@@ -151,6 +218,86 @@ class User(InstructionGroup):
             self.current_mode.on_segment(data)
 
         self.current_mode.on_update(self.time)
+        self.current_background.on_update(self.time)
+
+
+class ModeTransition(InstructionGroup):
+    def __init__(self, color, mode1, mode2, start_time, transition_time):
+        super(ModeTransition, self).__init__()
+        self.transition_time = transition_time  * 1.5
+        self.color = color
+        self.mode1 = mode1
+        self.mode2 = mode2
+        self.start_time = start_time
+        self.square_side = Window.width * 0.05
+
+        # Dictionary mapping mode instance to corresponding texture
+        self.mode_textures = {'Kaleidoscope': Image("res/Kaleidoscope.png").texture,
+                              'Prism': Image("res/Prism.png").texture,
+                              'PulsingBar': Image("res/PulsingBar.png").texture,
+                              'SpectralBars': Image("res/SpectralBars.png").texture,
+                              'Tunnel': Image('res/Tunnel.png').texture}
+
+
+
+        self.new_mode = None
+
+        self.left_color = Color(rgba =(1.0, 1.0, 1.0, 0.3))
+        self.left = Rectangle(pos = (Window.width * 0.25, Window.height * 0.5 ), size = (Window.width * 0.1, Window.width * 0.1), texture = self.mode_textures[self.mode1.__name__] )
+        self.add(self.left_color)
+        self.add(self.left)
+
+
+        self.right_color = Color(rgba = (1.0, 1.0, 1.0, 0.3))
+        self.right = Rectangle(pos = (Window.width * 0.65, Window.height * 0.5 ), size = (Window.width * 0.1, Window.width * 0.1), texture = self.mode_textures[self.mode2.__name__] )
+        self.add(self.right_color)
+        self.add(self.right)
+
+    def on_update(self, time):
+        x_pos = Window.mouse_pos[0]
+
+
+        if time > self.start_time + self.transition_time and not self.new_mode:
+            if x_pos < Window.width / 2:
+                self.new_mode = self.mode1(self.color)
+            else:
+                self.new_mode = self.mode2(self.color)
+            self.remove(self.left)
+            self.remove(self.right)
+            self.add(Color(rgb=(1.0, 1.0, 1.0)))
+            self.add(self.new_mode)
+        elif time < self.start_time + self.transition_time:
+            if x_pos < Window.width / 2:
+                self.left_color.a = 0.8
+                self.right_color.a = 0.3
+            else:
+                self.right_color.a = 0.8
+                self.left_color.a = 0.3
+
+        if self.new_mode:
+            self.new_mode.on_update(time)
+
+
+
+    def on_touch_move(self, touch):
+        if self.new_mode:
+            self.new_mode.on_touch_move(touch)
+
+    def on_beat(self):
+        if self.new_mode:
+            self.new_mode.on_beat()
+
+    def on_segment(self, data):
+        if self.new_mode:
+            self.new_mode.on_segment(data)
+
+    def on_tatum(self):
+        if self.new_mode:
+            self.new_mode.on_tatum()
+
+    def in_transition(self, time, transition_time):
+
+        return time < self.start_time + transition_time
 
 
 class ProgressBar(InstructionGroup):
@@ -232,73 +379,88 @@ class ProgressBar(InstructionGroup):
         self.progress_mark.pos = ((self.length * progress) + self.buffer, self.buffer)
 
 
-class FloatingCircle(InstructionGroup):
-    def __init__(self, pos, r):
+class FloatingShape(InstructionGroup):
+    def __init__(self, cpos, dim, shape):
         super().__init__()
 
-        self.radius = r
-        self.pos = np.array(pos, dtype=np.float)
-        self.vel = np.array((choice([-1, 1])*randint(50, 200), choice([-1, 1])*randint(50, 200)), dtype=np.float)
+        self.shape = shape
+        tex_file = 'res/background/%s%d.png' % (self.shape, randint(1, 4))
 
-        self.circle = CEllipse(cpos=pos, csize=(2*r, 2*r), segments=40)
-        self.add(self.circle)
+        self.buffer = dim[1] / 2
+
+        self.dim = np.array(dim, dtype=np.float)
+        self.cpos = cpos
+        self.pos = np.array([cpos[0] - 0.5 * dim[0], cpos[1] - 0.5 * dim[1]])
+        self.vel = np.array((choice([-1, 1]) * randint(50, 200), choice([-1, 1]) * randint(50, 200)), dtype=np.float)
+
+        self.add(PushMatrix())
+
+        self.rotate = Rotate(origin=self.pos, angle=randint(0, 359))
+        self.add(self.rotate)
+
+        self.shape = Rectangle(size=dim, texture=Image(tex_file).texture, pos=self.pos)
+        self.add(self.shape)
+
+        self.add(PopMatrix())
 
         self.time = 0
         self.on_update(0)
 
     def on_update(self, time):
-        dt = (time - self.time)/1000
+        dt = (time - self.time) / 1000
         self.time = time
 
         # integrate vel to get pos
         self.pos += self.vel * dt
+        self.rotate.angle += random()
 
         # collision with bottom
-        if self.pos[1] < - self.radius:
+        if self.pos[1] < - self.buffer:
             self.vel[1] = -self.vel[1]
-            self.pos[1] = - self.radius
+            self.pos[1] = - self.buffer
 
         # collision with top
-        if self.pos[1] > Window.height + self.radius:
+        if self.pos[1] > Window.height + self.buffer:
             self.vel[1] = - self.vel[1]
-            self.pos[1] = Window.height + self.radius
+            self.pos[1] = Window.height + self.buffer
 
         # collision with left side
-        if self.pos[0] < -self.radius :
+        if self.pos[0] < -self.buffer:
             self.vel[0] = - self.vel[0]
-            self.pos[0] = - self.radius
+            self.pos[0] = - self.buffer
 
         # collision with right side
-        if self.pos[0] > Window.width + self.radius:
+        if self.pos[0] > Window.width + self.buffer:
             self.vel[0] = - self.vel[0]
-            self.pos[0] = Window.width + self.radius
+            self.pos[0] = Window.width + self.buffer
 
-        self.circle.cpos = self.pos
+        self.shape.pos = self.pos
+        self.rotate.origin = self.pos
 
         return True
 
 
-class AmbientBackgroundCircles(InstructionGroup):
+class AmbientBackgroundBlobs(InstructionGroup):
     """Light colored fading"""
-    def __init__(self, alpha=0.2, num_circles=20):
+    def __init__(self, shape, alpha=0.2, num_shapes=20):
         super().__init__()
 
         color = Color(*kPalette['gray800'])
         color.a = alpha
         self.add(color)
 
-        self.circles = []
-        for i in range(num_circles):
-            rad = randint(200, 400)
+        self.blobs = []
+        for i in range(num_shapes):
+            rad = randint(int(Window.width/10), int(Window.width/3))
             pos = random() * Window.width, random() * Window.height
-            circle = FloatingCircle(pos, rad)
-            self.circles.append(circle)
-            self.add(circle)
+            blob = FloatingShape(pos, (rad, rad), shape)
+            self.blobs.append(blob)
+            self.add(blob)
 
     def on_update(self, time):
-        for circle in self.circles:
+        for blob in self.blobs:
             # Move around randomly
-            circle.on_update(time)
+            blob.on_update(time)
 
 
 # ==================================
@@ -314,7 +476,8 @@ class Kaleidoscope(InstructionGroup):
 
 
         self.add(PushMatrix())
-        self.background = Rectangle(pos=((Window.width-height)/2,2*offset), size=(height, height), texture=Image('circle.png').texture)
+        self.background = Rectangle(pos=((Window.width-height)/2,2*offset), size=(height, height),
+                                    texture=Image('res/kaleidoscope/circle.png').texture)
         self.add(self.background)
 
         middle_y = 2*offset + height/2
@@ -322,7 +485,8 @@ class Kaleidoscope(InstructionGroup):
         self.rotate = Rotate(angle=0, origin=(Window.width/2,middle_y))
         self.add(self.rotate)
 
-        self.star = Rectangle(pos=((Window.width-height)/2,2*offset), size=(height, height), texture=Image('weird_star.png').texture)
+        self.star = Rectangle(pos=((Window.width-height)/2,2*offset), size=(height, height),
+                              texture=Image('res/kaleidoscope/weird_star.png').texture)
         self.add(self.star)
 
         self.add(PopMatrix())
@@ -616,7 +780,7 @@ class SpectralBars(InstructionGroup):
                 color = self.colors[23-i]
             self.add(Color(rgb=color))
             pos = ( (i * self.bar_width) + (6 * self.bar_width), Window.height/4)
-            bar = Rectangle(pos = pos, size = (self.bar_width, self.bar_height))
+            bar = RoundedRectangle(pos = pos, size = (self.bar_width, self.bar_height))
             
             self.bars.append(bar)
 
