@@ -874,7 +874,10 @@ class Vertex(InstructionGroup):
                 self.anim_start_time = self.time
                 start_x, start_y = self.pos
                 self.touched_anim = KFAnim((self.time, start_x, start_y),
-                                           (self.time + self.anim_duration / 6, start_x + self.velocity[0], start_y + self.velocity[1]),
+                                           (self.time + self.anim_duration / 6, start_x + self.velocity[0],
+                                            start_y + self.velocity[1]),
+                                           (self.time + self.anim_duration / 2, start_x + self.velocity[0]/2,
+                                            start_y + self.velocity[1]/2),
                                            (self.time + self.anim_duration, start_x, start_y))
 
     def set_pos(self, p):
@@ -905,7 +908,7 @@ class Vertex(InstructionGroup):
 
 
 class Edge(InstructionGroup):
-    def __init__(self, points, color, width=1, a=0.5):
+    def __init__(self, points, color, width=2, a=0.5):
         super(Edge, self).__init__()
 
         self.color = Color(*color)
@@ -917,13 +920,6 @@ class Edge(InstructionGroup):
 
         self.index = 0
 
-    def on_pulse(self):
-        self.index += 1
-        if self.index % 2 == 0:
-            self.line.width /= 3
-        else:
-            self.line.width *= 3
-
 
 class Prism(InstructionGroup):
     """
@@ -934,6 +930,8 @@ class Prism(InstructionGroup):
     def __init__(self, color):
         super(Prism, self).__init__()
         v = 8  # number of vertices
+
+        self.beat = 0  # Helps with on_beat()
 
         self.vertex_rad = 20
         self.boundary = self.vertex_rad  # Radial boundary for registering a touch on a vertex
@@ -992,8 +990,13 @@ class Prism(InstructionGroup):
         """
         edges = []
         edge_points = list(itertools.combinations(vertices, 2))
+
+        if self.beat % 2 == 0:
+            a = 0.4
+        else:
+            a = 0.8
         for i in range(len(edge_points)):
-            edge = Edge(points=edge_points[i], color=self.edge_color, width=2)
+            edge = Edge(points=edge_points[i], color=self.edge_color, width=2, a=a)
             edges.append(edge)
         self.edges = edges
 
@@ -1009,9 +1012,6 @@ class Prism(InstructionGroup):
                 self.vertices[v].on_touch()
                 touched.add(self.vertices[v])
 
-        # # For the touched vertices, evaluate their animations
-        # # Move the vertices
-        # for vertex in touched:  # Bounce the vertex away from the mouse when touched
         for vertex in self.vertices.values():
             new_pos = tuple(vertex.dot.cpos)
             coord_to_remove = None  # Can't remove an item while iterating through the dictionary
@@ -1023,8 +1023,14 @@ class Prism(InstructionGroup):
             vertex.set_pos(new_pos)  # Change the position of the vertex too
 
     def on_beat(self):
-        """Pulse the linewidth"""
-        pass
+        self.beat += 1
+
+        if self.beat % 2 == 0:
+            a = 0.4
+        else:
+            a = 0.8
+        for v in self.vertices.values():
+            v.set_alpha(a)
 
     def on_segment(self, data):
         for v in self.vertices.values():
