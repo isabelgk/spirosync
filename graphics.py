@@ -1,3 +1,4 @@
+"""InstructionGroups for graphical elements of the visualizer widget"""
 import sys
 sys.path.append('..')
 from common.core import *
@@ -5,69 +6,19 @@ from common.gfxutil import *
 
 from kivy.core.window import Window, WindowBase
 from kivy.graphics.instructions import InstructionGroup
-from kivy.graphics import Color, Ellipse, Rectangle, Line, Triangle, RoundedRectangle
+from kivy.graphics import Color, Rectangle, Line, RoundedRectangle
 from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
 from kivy.core.image import Image
 
 from random import random, choice, randint, shuffle
 
-import colorsys
+from constants import kPalette
+from utils import generate_sub_palette
+
 import itertools
 import numpy as np
 
 
-# ==================================
-# Constants
-# ==================================
-
-kSpeed = 5000  # pixels/sec
-kPalette = {'pink400': (0.9254901960784314, 0.25098039215686274, 0.47843137254901963),
-            'red400': (0.9372549019607843, 0.3254901960784314, 0.3137254901960784),
-            'orange400': (1.0, 0.6549019607843137, 0.14901960784313725),
-            'deep_orange400': (1.0, 0.4392156862745098, 0.2627450980392157),
-            'amber400': (1.0, 0.792156862745098, 0.1568627450980392),
-            'yellow400': (1.0, 0.9333333333333333, 0.34509803921568627),
-            'light_green400': (0.611764705882353, 0.8, 0.396078431372549),
-            'lime400': (0.8313725490196079, 0.8823529411764706, 0.3411764705882353),
-            'green400': (0.4, 0.7333333333333333, 0.41568627450980394),
-            'teal400': (0.14901960784313725, 0.6509803921568628, 0.6039215686274509),
-            'light_blue400': (0.1607843137254902, 0.7137254901960784, 0.9647058823529412),
-            'cyan400': (0.14901960784313725, 0.7764705882352941, 0.8549019607843137),
-            'blue400': (0.25882352941176473, 0.6470588235294118, 0.9607843137254902),
-            'purple400': (0.6705882352941176, 0.2784313725490196, 0.7372549019607844),
-            'deep_purple400': (0.49411764705882355, 0.3411764705882353, 0.7607843137254902),
-            'indigo400': (0.3607843137254902, 0.4196078431372549, 0.7529411764705882),
-            'brown400': (0.5529411764705883, 0.43137254901960786, 0.38823529411764707),
-            'blue_gray400': (0.47058823529411764, 0.5647058823529412, 0.611764705882353),
-            'gray50': (0.9803921568627451, 0.9803921568627451, 0.9803921568627451),
-            'gray400': (0.7411764705882353, 0.7411764705882353, 0.7411764705882353),
-            'gray800': (0.25882352941176473, 0.25882352941176473, 0.25882352941176473),
-            'gray900': (0.12941176470588237, 0.12941176470588237, 0.12941176470588237),
-            }
-
-
-def generate_sub_palette(rgb, num_colors=16):
-    """
-    From one input color, create a list of colors (a sub-palette) close to that original.
-
-    :param rgb: An RGB tuple as an initializer color
-    :param num_colors: integer number of colors in output palette
-    :return: list of RGB tuples of length num_colors
-    """
-    # Convert from RGB to HSV
-    h, s, v = colorsys.rgb_to_hsv(*rgb)
-
-    vs = np.linspace(0.7, 1.0, num_colors)
-    ss = np.linspace(0.01, 1.0, num_colors)
-
-    palette = [colorsys.hsv_to_rgb(h, ss[i], vs[i]) for i in range(num_colors)]
-
-    return palette
-
-
-# ==================================
-# InstructionGroups
-# ==================================
 class User(InstructionGroup):
     """ The User handles the audio analysis data and can call methods on the visualizer modes. """
     def __init__(self, spotify_song, progress_bar):
@@ -238,15 +189,12 @@ class ModeTransition(InstructionGroup):
                               'SpectralBars': Image("res/SpectralBars.png").texture,
                               'Tunnel': Image('res/Tunnel.png').texture}
 
-
-
         self.new_mode = None
 
         self.left_color = Color(rgba =(1.0, 1.0, 1.0, 0.3))
         self.left = Rectangle(pos = (Window.width * 0.25, Window.height * 0.5 ), size = (Window.width * 0.1, Window.width * 0.1), texture = self.mode_textures[self.mode1.__name__] )
         self.add(self.left_color)
         self.add(self.left)
-
 
         self.right_color = Color(rgba = (1.0, 1.0, 1.0, 0.3))
         self.right = Rectangle(pos = (Window.width * 0.65, Window.height * 0.5 ), size = (Window.width * 0.1, Window.width * 0.1), texture = self.mode_textures[self.mode2.__name__] )
@@ -255,7 +203,6 @@ class ModeTransition(InstructionGroup):
 
     def on_update(self, time):
         x_pos = Window.mouse_pos[0]
-
 
         if time > self.start_time + self.transition_time and not self.new_mode:
             if x_pos < Window.width / 2:
@@ -463,17 +410,11 @@ class AmbientBackgroundBlobs(InstructionGroup):
             blob.on_update(time)
 
 
-# ==================================
-# Visualizer modes
-# ==================================
-
 class Kaleidoscope(InstructionGroup):
     def __init__(self, color):
         super(Kaleidoscope, self).__init__()
         offset = Window.width * 0.05
         height = Window.height-2*offset
-
-
 
         self.add(PushMatrix())
         self.background = Rectangle(pos=((Window.width-height)/2,2*offset), size=(height, height),
