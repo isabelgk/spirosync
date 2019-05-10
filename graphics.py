@@ -961,6 +961,8 @@ class Prism(InstructionGroup):
             # Store in dictionary for fast vertex lookup based on position
             self.vertices[pos] = vertex
 
+        self.original_vertices = self.vertices.copy()
+
         # Create a list where each element is a 2-tuple of the vertex points
         self.edges = []
         self._gen_edges(self.vertices.keys())
@@ -1007,9 +1009,10 @@ class Prism(InstructionGroup):
                 self.vertices[v].on_touch()
                 touched.add(self.vertices[v])
 
-        # For the touched vertices, evaluate their animations
-        # Move the vertices
-        for vertex in touched:  # Bounce the vertex away from the mouse when touched
+        # # For the touched vertices, evaluate their animations
+        # # Move the vertices
+        # for vertex in touched:  # Bounce the vertex away from the mouse when touched
+        for vertex in self.vertices.values():
             new_pos = tuple(vertex.dot.cpos)
             coord_to_remove = None  # Can't remove an item while iterating through the dictionary
             for coord, obj in self.vertices.items():
@@ -1021,9 +1024,7 @@ class Prism(InstructionGroup):
 
     def on_beat(self):
         """Pulse the linewidth"""
-        keys = list(self.vertices.keys())
-        keys.sort()
-        print(keys)
+        pass
 
     def on_segment(self, data):
         for v in self.vertices.values():
@@ -1045,13 +1046,9 @@ class Prism(InstructionGroup):
         self.time = time
         self.mouse_pos = Window.mouse_pos
 
-
-        self._update_vertices()
-
         self._remove_objects()
-
+        self._update_vertices()
         self._gen_edges(self.vertices.keys())
-
         self._add_objects()
 
 
