@@ -39,8 +39,8 @@ class User(InstructionGroup):
         self.current_background = None
 
         # list of all modes
-        self.modes = [PulsingBar, Tunnel, SpectralBars, Prism, Kaleidoscope]
-
+        # self.modes = [PulsingBar, Tunnel, SpectralBars, Prism, Kaleidoscope]
+        self.modes = [Prism, Prism]
         # the mode for each section
         self.section_modes = [int( random() * len(self.modes)) for i in range(len(self.audio.get_current_track().get_sections()))]
         # self.section_modes = [4 for i in range(len(self.audio.get_current_track().get_sections()))]
@@ -223,8 +223,6 @@ class ModeTransition(InstructionGroup):
 
         if self.new_mode:
             self.new_mode.on_update(time)
-
-
 
     def on_touch_move(self, touch):
         if self.new_mode:
@@ -783,7 +781,7 @@ class SpectralBars(InstructionGroup):
 
 class Vertex(InstructionGroup):
     """Class to use in Prism"""
-    def __init__(self, pos, rgb, rad, a=0.8):
+    def __init__(self, pos, rgb, rad, a=0.5):
         super(Vertex, self).__init__()
         self.pos = pos
         self.rad = rad
@@ -793,12 +791,57 @@ class Vertex(InstructionGroup):
         self.color.a = self.alpha
         self.add(self.color)
 
-        self.dot = CEllipse(cpos=self.pos, csize=(2 * self.rad, 2 * self.rad), segments=40)
+        self.dot = CEllipse(cpos=self.pos, csize=(2 * self.rad, 2 * self.rad), segments=50)
         self.add(self.dot)
 
         self.touched = False
+        self.touched_anim = None
 
         self.time = 0
+        self.anim_start_time = None
+        self.anim_duration = 500  # ms
+        self.bounce_distance = rad * 3
+
+        self.quadrant = self._get_quadrant(self.pos)
+        self.velocity = None
+        self.set_velocity()
+
+        self.on_update(0)
+
+    @staticmethod
+    def _get_quadrant(pos):
+        """
+        Given a position, determine which quadrant the point lies in, i.e.:
+            2 | 1
+            ------
+            3 | 4
+        """
+        if pos[0] <= Window.width / 2:
+            if pos[1] <= Window.height / 2:
+                return 3
+            else:
+                return 2
+        else:
+            if pos[1] <= Window.height / 2:
+                return 4
+            else:
+                return 1
+
+    def set_velocity(self):
+        if self.quadrant == 1:
+            self.velocity = np.array([1, 1]) * self.bounce_distance
+        elif self.quadrant == 2:
+            self.velocity = np.array([-1, 1])* self.bounce_distance
+        elif self.quadrant == 3:
+            self.velocity = np.array([-1, -1])* self.bounce_distance
+        else:
+            self.velocity = np.array([1, -1])* self.bounce_distance
+
+    def set_alpha(self, a):
+        self.color.a = a
+
+    def get_velocity(self):
+        return self.velocity
 
     def on_beat(self):
         """
@@ -827,10 +870,18 @@ class Vertex(InstructionGroup):
     def on_touch(self):
         """Called by Prism when the mouse touches the vertex"""
         if not self.touched:
-            self.touched = True
+            if self.touched_anim is None:
+                self.anim_start_time = self.time
+                start_x, start_y = self.pos
+                self.touched_anim = KFAnim((self.time, start_x, start_y),
+                                           (self.time + self.anim_duration / 6, start_x + self.velocity[0], start_y + self.velocity[1]),
+                                           (self.time + self.anim_duration, start_x, start_y))
 
     def set_pos(self, p):
         self.dot.pos = np.array(p) - self.rad
+
+    def get_pos(self):
+            return self.dot.pos
 
     def on_tatum(self):
         pass
@@ -840,6 +891,15 @@ class Vertex(InstructionGroup):
 
     def on_update(self, time):
         self.time = time
+
+        if self.anim_start_time is not None and self.anim_start_time + self.anim_duration <= self.time:
+            self.touched_anim = None
+            self.anim_start_time = None
+
+        if self.touched_anim is not None:
+            self.pos = self.touched_anim.eval(self.time)
+            self.dot.cpos = self.pos
+
         if self.touched:
             self.touched = False
 
@@ -876,7 +936,7 @@ class Prism(InstructionGroup):
         v = 8  # number of vertices
 
         self.vertex_rad = 20
-        self.boundary = self.vertex_rad * 1.2  # Radial boundary for registering a touch on a vertex
+        self.boundary = self.vertex_rad  # Radial boundary for registering a touch on a vertex
 
         # Generate RGB palette
         self.colors = generate_sub_palette(color, num_colors=v+3)
@@ -902,110 +962,97 @@ class Prism(InstructionGroup):
             self.vertices[pos] = vertex
 
         # Create a list where each element is a 2-tuple of the vertex points
-        self.edges = self._gen_edges(self.vertices.keys())
+        self.edges = []
+        self._gen_edges(self.vertices.keys())
+
+        self._add_objects()
+
+    def _remove_objects(self):
+        """Remove all vertices and edges from the screen"""
+        for e in self.edges:
+            self.remove(e)
+        for vertex in self.vertices.values():
+            self.remove(vertex)
+
+    def _add_objects(self):
+        """Add all vertices and edges to the screen"""
+        # First remove the edges and vertices from the screen
         for e in self.edges:
             self.add(e)
-
         for v in self.vertices.values():
             self.add(v)
-
-        self.touched = None
 
     def _gen_edges(self, vertices):
         """
         Helper method to create a list where each element is a 2-tuple of the vertex points
         :param vertices: Coordinates of vertices (list)
-        :return: pairs of coordinates (list)
+        :return: None
         """
         edges = []
         edge_points = list(itertools.combinations(vertices, 2))
         for i in range(len(edge_points)):
             edge = Edge(points=edge_points[i], color=self.edge_color, width=2)
             edges.append(edge)
-        return edges
+        self.edges = edges
 
-    def on_beat(self):
-        """Moves the prism"""
-
-        # Remove the edges
-        for e in self.edges:
-            self.remove(e)
-
-        for coord, obj in self.vertices.items():
-            if not obj.touched:
-                # Remove the vertices
-                self.remove(obj)
-
-                # Recalculate new position, move the point
-                new_pos = obj.on_beat()
-                self.vertices.pop(coord)
-
-                # Update the dictionary
-                self.vertices[new_pos] = obj
-
-        # Recalculate the edges
-        self.edges = self._gen_edges(self.vertices.keys())
-
-        # Redraw the edges
-        for e in self.edges:
-            self.add(e)
-
-        # Redraw the vertices
-        for v in self.vertices.values():
-            self.add(v)
-
-    def on_segment(self, data):
-        """Change size of the vertices based on timbre vector"""
-        for v in self.vertices.values():
-            v.on_segment()
-
-    def on_tatum(self):
-        """Release little dots from the vertices"""
-        for v in self.vertices.values():
-            v.on_tatum()
-
-    def on_touch_move(self, touch):
-        if self.touched is not None:
-            # Remove the edges
-            for e in self.edges:
-                self.remove(e)
-
-            coord_to_remove = None  # Can't remove an item while iterating through the dictionary
-            for coord, obj in self.vertices.items():
-                if self.touched == obj:
-                    coord_to_remove = coord
-            self.vertices.pop(coord_to_remove)  # Now remove it
-            self.vertices[touch.pos] = self.touched  # And replace it
-
-            # Recalculate the edges
-            self.edges = self._gen_edges(self.vertices.keys())
-
-            # Redraw the edges
-            for e in self.edges:
-                self.add(e)
-
-            self.touched.set_pos(touch.pos)
-
-    def on_update(self, time):
-        """Called by User every frame"""
-        self.time = time
-        self.mouse_pos = Window.mouse_pos
-
-        # Check which vertex is near the mouse
+    def _update_vertices(self):
+        # Updated which vertices are touched
         touched = set()
         for v in self.vertices.keys():
             self.vertices[v].on_update(self.time)
             dot = np.array(v)
-            dist = np.abs(np.linalg.norm(dot-np.array(self.mouse_pos)))
+            dist = np.abs(np.linalg.norm(dot - np.array(self.mouse_pos)))
             if dist < self.boundary:
                 # Vertex is touched
                 self.vertices[v].on_touch()
                 touched.add(self.vertices[v])
 
-        if len(touched) > 0:
-            self.touched = touched.pop()
-        else:
-            self.touched = None
+        # For the touched vertices, evaluate their animations
+        # Move the vertices
+        for vertex in touched:  # Bounce the vertex away from the mouse when touched
+            new_pos = tuple(vertex.dot.cpos)
+            coord_to_remove = None  # Can't remove an item while iterating through the dictionary
+            for coord, obj in self.vertices.items():
+                if vertex == obj:
+                    coord_to_remove = coord
+            self.vertices.pop(coord_to_remove)  # Now remove it
+            self.vertices[new_pos] = vertex  # And replace it
+            vertex.set_pos(new_pos)  # Change the position of the vertex too
+
+    def on_beat(self):
+        """Pulse the linewidth"""
+        keys = list(self.vertices.keys())
+        keys.sort()
+        print(keys)
+
+    def on_segment(self, data):
+        for v in self.vertices.values():
+            v.on_segment()
+
+    def on_tatum(self):
+        for v in self.vertices.values():
+            v.on_tatum()
+
+    def on_touch_move(self, touch):
+        pass
+
+    def on_update(self, time):
+        """
+        Called by User every frame
+        - Updates the time and mouse position
+        - Checks which vertices are touched by the mouse and bounces them when touched
+        """
+        self.time = time
+        self.mouse_pos = Window.mouse_pos
+
+
+        self._update_vertices()
+
+        self._remove_objects()
+
+        self._gen_edges(self.vertices.keys())
+
+        self._add_objects()
 
 
 class OnBeatBubble(InstructionGroup):
