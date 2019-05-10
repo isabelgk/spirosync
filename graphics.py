@@ -39,8 +39,8 @@ class User(InstructionGroup):
         self.current_background = None
 
         # list of all modes
-        # self.modes = [PulsingBar, Tunnel, SpectralBars, Prism, Kaleidoscope]
-        self.modes = [Prism, Prism]
+        self.modes = [PulsingBar, Tunnel, SpectralBars, Prism, Kaleidoscope]
+        # self.modes = [Prism, Prism]
         # the mode for each section
         self.section_modes = [int( random() * len(self.modes)) for i in range(len(self.audio.get_current_track().get_sections()))]
         # self.section_modes = [4 for i in range(len(self.audio.get_current_track().get_sections()))]
