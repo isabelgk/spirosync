@@ -67,7 +67,7 @@ class User(InstructionGroup):
         self.last_beat = 0
 
         self.in_transition = False
-        self.transition_time = 2000  # ms
+        self.transition_time = 1000  # ms
 
         # count the number of iterations that have been on beat
         self.num_beats = 0
