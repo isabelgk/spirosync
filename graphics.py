@@ -6,7 +6,7 @@ from common.gfxutil import *
 
 from kivy.core.window import Window, WindowBase
 from kivy.graphics.instructions import InstructionGroup
-from kivy.graphics import Color, Rectangle, Line, RoundedRectangle
+from kivy.graphics import Color, Rectangle, Line, RoundedRectangle, Bezier
 from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
 from kivy.core.image import Image
 
@@ -67,7 +67,7 @@ class User(InstructionGroup):
         self.play = True
 
     def play(self):
-        self.play = True
+        self.play = True 
 
     def pause(self):
         self.play = False
@@ -167,6 +167,7 @@ class User(InstructionGroup):
             self.current_segment = segment_index
             data = self.audio.get_current_track().get_segments_data()[self.current_segment]
             self.current_mode.on_segment(data)
+            self.progress_bar.on_segment(data)
 
         self.current_mode.on_update(self.time)
         self.current_background.on_update(self.time)
@@ -244,6 +245,50 @@ class ModeTransition(InstructionGroup):
 
         return time < self.start_time + transition_time
 
+class PitchPulse(InstructionGroup):
+    ''' Graphics representing pitch line that goes through progress bar '''
+
+    def __init__(self, bar_length, start_pos):
+        super(PitchPulse, self).__init__()
+        self.bar_height = start_pos
+        self.add(Color(rgb=(1.0, 1.0, 1.0)))
+
+        # generate 14 points to make up line
+        self.points = [start_pos, start_pos] # left most point
+        for i in range(1, 13):
+            self.points.append(i * (bar_length+start_pos)/14)
+            self.points.append(start_pos)
+
+        # add rightmost point
+        self.points.append(bar_length + start_pos)
+        self.points.append(start_pos)
+
+        # Bezier or line??
+        self.line = Line(points=self.points, width=3, joint='round', cap='round')
+        #self.line = Bezier(points=self.points)
+        self.add(self.line)
+
+    def on_segment(self, data):
+        pitches = data['pitches']
+        points = self.points.copy()
+
+        # update the middle 12 points according to pitches
+        for i in range(len(pitches)):
+            y_pos = (self.bar_height * pitches[i]) + self.bar_height
+
+            points[2*i+3] = y_pos
+
+        self.line.points = points
+
+    def on_update(self):
+        for i in range(1, 24, 2):
+            diff = self.line.points[i] - 1.5*self.bar_height
+            #self.line.points[i] -= 0.5*diff
+
+
+
+
+
 
 class ProgressBar(InstructionGroup):
     """Graphics representing progress bar. Animates the fraction of the song that has played"""
@@ -279,7 +324,8 @@ class ProgressBar(InstructionGroup):
 
             section_length = section['duration'] * 1000
             bar_length = self.length * (section_length / self.duration)
-            bar = Rectangle(pos=(start_pos, self.buffer), size=(bar_length, self.buffer))
+            # Do we want the rectangles to be rounded? 
+            bar = RoundedRectangle(pos=(start_pos, self.buffer), size=(bar_length, self.buffer))
             self.bars.append(bar)
             start_pos += bar_length
             self.add(bar)
@@ -288,6 +334,11 @@ class ProgressBar(InstructionGroup):
         self.add(Color(rgb=kPalette['gray50']))
         self.progress_mark = Rectangle(pos=(self.buffer, self.buffer), size=(self.buffer / 10, self.buffer))
         self.add(self.progress_mark)
+
+        # make pitch pulse 
+        # progress bar starts at (self.buffer, self.buffer)
+        self.pitch_line = PitchPulse(self.length, self.buffer)
+        self.add(self.pitch_line)
 
     def update_song(self, sections, duration):
         self.sections = sections
@@ -320,9 +371,13 @@ class ProgressBar(InstructionGroup):
     def get_section_color(self, i):
         return self.section_color[i]
 
+    def on_segment(self, data):
+        self.pitch_line.on_segment(data)
+
+
     def on_update(self, progress):
         self.progress_mark.pos = ((self.length * progress) + self.buffer, self.buffer)
-
+        self.pitch_line.on_update()
 
 class FloatingShape(InstructionGroup):
     def __init__(self, cpos, dim, shape):
