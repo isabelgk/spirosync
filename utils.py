@@ -20,3 +20,13 @@ def generate_sub_palette(rgb, num_colors=16):
     palette = [colorsys.hsv_to_rgb(h, ss[i], vs[i]) for i in range(num_colors)]
 
     return palette
+
+
+def centroid(points):
+    """Calculate the centroid of a list of (x, y) tuples."""
+    x_coords = [p[0] for p in points]
+    y_coords = [p[1] for p in points]
+    _len = len(points)
+    centroid_x = sum(x_coords)/_len
+    centroid_y = sum(y_coords)/_len
+    return [centroid_x, centroid_y]

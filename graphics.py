@@ -13,7 +13,7 @@ from kivy.core.image import Image
 from random import random, choice, randint, shuffle
 
 from constants import kPalette
-from utils import generate_sub_palette
+from utils import generate_sub_palette, centroid
 
 import itertools
 import numpy as np
@@ -986,6 +986,7 @@ class Prism(InstructionGroup):
         super(Prism, self).__init__()
         v = 8  # number of vertices
 
+        self.rotate_flag = True
         self.beat = 0  # Helps with on_beat()
 
         self.vertex_rad = 20
@@ -1004,8 +1005,8 @@ class Prism(InstructionGroup):
         self.vertices = {}
         for i in range(v):
             # Random position
-            x_pos = randint(int(Window.width * 0.1), int(Window.width * 0.9))
-            y_pos = randint(int(Window.height * 0.2), int(Window.height * 0.8))
+            x_pos = randint(int(Window.width * 0.25), int(Window.width * 0.7))
+            y_pos = randint(int(Window.height * 0.3), int(Window.height * 0.7))
             pos = x_pos, y_pos
 
             # Object to draw on screen
@@ -1014,16 +1015,25 @@ class Prism(InstructionGroup):
             # Store in dictionary for fast vertex lookup based on position
             self.vertices[pos] = vertex
 
+        self.centroid = centroid(list(self.vertices.keys()))
+        self.angle = 0
+        self.rotate = Rotate(origin=self.centroid, angle=self.angle)
+
         self.original_vertices = self.vertices.copy()
 
         # Create a list where each element is a 2-tuple of the vertex points
         self.edges = []
         self._gen_edges(self.vertices.keys())
 
+        self.add(PushMatrix())
+        self.add(self.rotate)
         self._add_objects()
+        self.add(PopMatrix())
 
     def _remove_objects(self):
         """Remove all vertices and edges from the screen"""
+        if self.rotate_flag:
+            self.remove(self.rotate)
         for e in self.edges:
             self.remove(e)
         for vertex in self.vertices.values():
@@ -1031,11 +1041,18 @@ class Prism(InstructionGroup):
 
     def _add_objects(self):
         """Add all vertices and edges to the screen"""
-        # First remove the edges and vertices from the screen
+        if self.rotate_flag:
+            self.add(PushMatrix())
+            self.rotate = Rotate(origin=self.centroid, angle=self.angle)
+            self.add(self.rotate)
+
         for e in self.edges:
             self.add(e)
         for v in self.vertices.values():
             self.add(v)
+
+        if self.rotate_flag:
+            self.add(PopMatrix())
 
     def _gen_edges(self, vertices):
         """
@@ -1079,6 +1096,7 @@ class Prism(InstructionGroup):
 
     def on_beat(self):
         self.beat += 1
+        self.angle += 3
 
         if self.beat % 2 == 0:
             a = 0.4
@@ -1105,7 +1123,22 @@ class Prism(InstructionGroup):
         - Checks which vertices are touched by the mouse and bounces them when touched
         """
         self.time = time
-        self.mouse_pos = Window.mouse_pos
+
+        if self.rotate_flag:
+            # We care about the mouse position relative to rotated coordinates: math.stackexchange.com/questions/1964905
+
+            # R = rotation matrix
+            theta = -self.angle * np.pi / 180
+            R = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
+
+            # Translation of the origin
+            b = np.array(self.centroid)
+            pos = np.array(Window.mouse_pos)
+
+            self.mouse_pos = np.dot(R, pos - b) + b
+
+        else:
+            self.mouse_pos = Window.mouse_pos
 
         self._remove_objects()
         self._update_vertices()
