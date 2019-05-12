@@ -190,8 +190,8 @@ class MainWidget(BaseWidget):
     def __init__(self):
         super(MainWidget, self).__init__()
 
-        # self.audio = Audio('1235254187')  # Serena
-        self.audio = Audio("isabelkaspriskie")  # Isabel
+        self.audio = Audio('1235254187')  # Serena
+        # self.audio = Audio("isabelkaspriskie")  # Isabel
         # self.audio = Audio("shann0nduffy")  # Shannon
 
         self.sections = self.audio.get_current_track().get_sections_data()
@@ -292,7 +292,7 @@ class MainWidget(BaseWidget):
         self.info.text += 'progress: %.2f \n' % self.progress
 
         self.song_info.text = self.name + '\n'
-        self.song_info.text +=  str(self.audio.artists) + '\n'
+        self.song_info.text +=  ", ".join(self.audio.artists) + '\n'
 
         self.ui.on_update(self.time)
         self.progress_bar.on_update(self.progress)
