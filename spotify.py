@@ -55,6 +55,8 @@ class Song:
             if b['confidence'] > CONFIDENCE_THRESHOLD:
                 self.bars.append((b['start'], b['duration']))
 
+        self.bar_flag = [False] * len(self.bars)
+
         for s in data['segments']:
             # SEGMENTS DATA: list of dictionaries where keys are {start, duration, confidence, loudness_start,
             # loudness_max_time, loudness_max, loudness_end, pitches, timbre}
@@ -136,8 +138,14 @@ class Song:
             if self.bars[i][0] > time:
                 break
 
-        # return true is close enough to beat directly before or after
-        return abs(time - self.bars[i - 1][0]) < threshold or abs(time - self.bars[i][0]) < threshold
+        # return True is close enough to beat directly before or after
+        if abs(time - self.bars[i - 1][0]) < threshold and not self.bar_flag[i-1]:
+            self.bar_flag[i-1] = True
+            return True
+        if abs(time - self.bars[i][0]) < threshold and not self.bar_flag[i]:
+            self.bar_flag[i] = True
+            return True
+        return False
 
 
 class Audio:
@@ -157,6 +165,7 @@ class Audio:
 
         self.artists = []
         self.song_name = ""
+        self.album_name = ""
 
         if self.current_playback_data:
             # make song object for song currently playing
@@ -164,6 +173,7 @@ class Audio:
             self.current_track = Song(self.sp, self.current_playback_data['item']['id'],
                                       self.current_playback_data['item']['duration_ms'])
             self.song_name = self.current_playback_data['item']['name']
+            self.album_name = self.current_playback_data['item']['album']
             for artist in self.current_playback_data['item']['artists']:
                 self.artists.append(artist['name'])
 
@@ -175,6 +185,7 @@ class Audio:
         if self.current_playback_data:
             self.current_track = Song(self.sp, self.current_playback_data['item']['id'], self.current_playback_data['item']['duration_ms'])
             self.song_name = self.current_playback_data['item']['name']
+            self.album_name = self.current_playback_data['item']['album']
             for artist in self.current_playback_data['item']['artists']:
                     self.artists.append(artist['name'])
 
@@ -191,6 +202,13 @@ class Audio:
             for artist in playback['item']['artists']:
                 self.artists.append(artist['name'])
         return self.artists
+
+    def get_album(self):
+        self.album_name = ""
+        playback = self.sp.current_playback()
+        if playback:
+            self.album_name = playback['item']['album']
+        return self.song_name
 
     def get_spotify(self):
         return self.sp

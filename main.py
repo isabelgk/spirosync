@@ -29,6 +29,12 @@ is_playing = False
 global song_name
 song_name = ""
 
+global artist_names
+artist_names = ""
+
+global album_name
+album_name = ""
+
 # https://developer.spotify.com/documentation/web-api/reference/tracks/get-audio-analysis/#timbre
 
 
@@ -58,7 +64,6 @@ class User(InstructionGroup):
         # the mode for each section
         self.section_modes = [int(random() * len(self.modes)) for i in
                               range(len(self.audio.get_current_track().get_sections()))]
-        # self.section_modes = [4 for i in range(len(self.audio.get_current_track().get_sections()))]
 
         # instance of current mode
         self.current_mode = None
@@ -96,14 +101,16 @@ class User(InstructionGroup):
     def update_progress_bar(self, progress_bar):
         self.progress_bar = progress_bar
 
-    def on_touch_move(self, touch):
+    def on_bar(self):
         if self.current_mode:
-            self.current_mode.on_touch_move(touch)
+            self.current_mode.on_bar(touch)
 
     def on_update(self, time):
         self.time = time
 
         self.is_onbeat = self.audio.get_current_track().on_beat(self.time, 0.1)
+
+        self.is_onbar = self.audio.get_current_track().on_bar(self.time, 0.1)
 
         section_index = self.audio.get_current_track().get_section_index(time)
 
@@ -178,6 +185,9 @@ class User(InstructionGroup):
         if self.is_onbeat:
             self.current_mode.on_beat()
 
+        if self.is_onbar:
+            self.current_mode.on_bar()
+
         segment_index = self.audio.get_current_track().get_segment_index(time)
         if segment_index != self.current_segment:
             self.current_segment = segment_index
@@ -193,8 +203,8 @@ class MainWidget(BaseWidget):
     def __init__(self):
         super(MainWidget, self).__init__()
 
-        self.audio = Audio('1235254187')  # Serena
-        # self.audio = Audio("isabelkaspriskie")  # Isabel
+        # self.audio = Audio('1235254187')  # Serena
+        self.audio = Audio("isabelkaspriskie")  # Isabel
         # self.audio = Audio("shann0nduffy")  # Shannon
 
         self.sections = self.audio.get_current_track().get_sections_data()
@@ -211,11 +221,14 @@ class MainWidget(BaseWidget):
         self.spacebar_down = False
 
         # Static text display
-        self.info = topleft_label(font_filepath="res/font/CabinCondensed-Regular.ttf")
-        self.add_widget(self.info)
-
         self.song_info = song_label()
         self.add_widget(self.song_info)
+
+        self.artist_info = artist_label()
+        self.add_widget(self.artist_info)
+
+        self.album_info = album_label()
+        self.add_widget(self.album_info)
 
         # seems to be some lag??
         #self.time = self.audio.get_time() / 1000 # Song position in ms
@@ -224,6 +237,8 @@ class MainWidget(BaseWidget):
         self.progress = 0  # Song position in percent completion
         self.spotify_playing = self.audio.is_playing()  # Flag on whether Spotify is playing a song or not
         self.name = self.audio.song_name
+        self.album_name = self.audio.album_name
+        self.artists = ", ".join(self.audio.artists)
 
         # THREADING
         self.api_thread = threading.Thread(target=self.call_api, args = (), daemon=True)
@@ -233,25 +248,28 @@ class MainWidget(BaseWidget):
         if keycode[1] == 'spacebar':
             self.ui.spacebar()
 
-    def on_touch_move(self, touch):
-        self.ui.on_touch_move(touch)
-
     def call_api(self):
         # continuously call spotify api to update time
         # returns playing flag and time
         global song_time
         global is_playing
         global song_name
+        global album_name
+        global artist_names
         while True:
             if self.audio.get_time() != None:
                 song_time = self.audio.get_time()
                 is_playing = self.audio.is_playing()
                 song_name = self.audio.get_song_name()
+                album_name = self.audio.get_album()
+                artist_names = ", ".join(self.audio.get_artists())
 
     def on_update(self):
         global song_time
         global is_playing
         global song_name
+        global album_name
+        global artist_names
 
         
         # use spotify time if updated, else use kivyClock
@@ -274,28 +292,25 @@ class MainWidget(BaseWidget):
 
             self.sections = self.audio.get_current_track().get_sections_data()
 
-
             self.duration = self.audio.get_current_track().duration
             self.canvas.remove(self.progress_bar)
 
             self.progress_bar = ProgressBar(self.sections, self.duration)
             self.ui.update_progress_bar(self.progress_bar)
 
-
             self.canvas.add(self.progress_bar)
 
             self.name = song_name
+            self.album_name = album_name
+            self.artists = artist_names
             #self.progress_bar.update_song(self.sections, self.duration)
 
             self.time = song_time
 
-        self.info.text = ''
-        self.info.text += 'time: %.2f\n' % self.time
-        self.info.text += 'fps: %.2f\n' % fps
-        self.info.text += 'progress: %.2f \n' % self.progress
 
         self.song_info.text = self.name + '\n'
-        self.song_info.text +=  ", ".join(self.audio.artists) + '\n'
+        self.artist_info.text = self.artists + '\n'
+        self.album_info.text = self.album_name + '\n'
 
         self.ui.on_update(self.time)
         self.progress_bar.on_update(self.progress)
@@ -303,11 +318,29 @@ class MainWidget(BaseWidget):
         # print(self.audio.get_current_track().get_section_index(self.time))
 
 
-def song_label(font_filepath='res/font/CabinCondensed-Regular.ttf', font_size='20sp'):
-    l = Label(text = "text", valign='top', halign='right', font_size=font_size,
-              pos = ( 0.80 * Window.width, Window.height * 0.4 ),
-              text_size=( 0.25 * Window.width, Window.height))
+def artist_label(font_filepath='res/font/CabinCondensed-Regular.ttf', font_size='20sp'):
+    l = Label(text="text", valign='top', halign='right', font_size=font_size,
+              pos=(0.80 * Window.width, Window.height * 0.4),
+              text_size=(0.25 * Window.width, Window.height))
     # print(l.pos)
+    if font_filepath is not None:
+        l.font_name = font_filepath
+    return l
+
+
+def song_label(font_filepath='res/font/CabinCondensed-Regular.ttf', font_size='20sp'):
+    l = Label(text="text", valign='top', halign='center', font_size=font_size,
+              pos=(Window.width * 15 / 32, Window.height * 0.4),
+              text_size=(0.25 * Window.width, Window.height))
+    if font_filepath is not None:
+        l.font_name = font_filepath
+    return l
+
+
+def album_label(font_filepath='res/font/CabinCondensed-Regular.ttf', font_size='20sp'):
+    l = Label(text = "text", valign='top', font_size=font_size,
+              pos=(Window.width * 0.5, Window.height * 0.4),
+              text_size=(Window.width, Window.height))
     if font_filepath is not None:
         l.font_name = font_filepath
     return l

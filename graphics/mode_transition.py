@@ -59,9 +59,9 @@ class ModeTransition(InstructionGroup):
         if self.new_mode:
             self.new_mode.on_update(time)
 
-    def on_touch_move(self, touch):
+    def on_bar(self):
         if self.new_mode:
-            self.new_mode.on_touch_move(touch)
+            self.new_mode.on_bar()
 
     def on_beat(self):
         if self.new_mode:
