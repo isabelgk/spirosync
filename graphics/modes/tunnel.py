@@ -124,7 +124,7 @@ class Tunnel(InstructionGroup):
     def on_tatum(self):
         pass
 
-    def on_touch_move(self, touch):
+    def on_bar(self):
         pass
 
     def on_update(self, time):
