@@ -111,7 +111,7 @@ class User(InstructionGroup):
             return
 
         time_to_next = self.audio.get_current_track().get_time_to_next_section(time)
-
+        color = self.progress_bar.get_section_color(section_index)
         if time_to_next < self.transition_time / 1000 and not self.in_transition and time_to_next != -1:
             self.in_transition = True
 
@@ -133,6 +133,7 @@ class User(InstructionGroup):
             self.current_mode = new_mode
             self.current_section = section_index + 1
 
+
         elif section_index != self.current_section and not self.in_transition and section_index != -1:
             self.in_transition = True
 
@@ -153,6 +154,8 @@ class User(InstructionGroup):
 
             self.current_mode = new_mode
             self.current_section = section_index
+
+
 
         self.in_transition = self.current_mode.in_transition(self.time, self.transition_time)
 
@@ -180,7 +183,7 @@ class User(InstructionGroup):
             self.current_segment = segment_index
             data = self.audio.get_current_track().get_segments_data()[self.current_segment]
             self.current_mode.on_segment(data)
-            self.progress_bar.on_segment(data)
+            self.progress_bar.pitch_pulse.on_segment(data, color)
 
         self.current_mode.on_update(self.time)
         self.current_background.on_update(self.time)

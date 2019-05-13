@@ -2,53 +2,89 @@ import sys
 sys.path.append('..')
 
 from kivy.core.window import Window
-from kivy.graphics import Color, Line, Rectangle, RoundedRectangle
+from kivy.graphics import Color, Line, Rectangle, RoundedRectangle, Bezier, SmoothLine
 from kivy.graphics.instructions import InstructionGroup
+from kivy.core.image import Image
 
 from random import choice
 
 from constants import kPalette
 
+from utils import generate_sub_palette
+
 
 class PitchPulse(InstructionGroup):
     """Graphics representing pitch line that goes through progress bar"""
 
-    def __init__(self, bar_length, start_pos):
+    def __init__(self, buff):
         super(PitchPulse, self).__init__()
-        self.bar_height = start_pos
-        self.add(Color(rgb=(1.0, 1.0, 1.0)))
+        self.buffer = buff
+        width = Window.width / 36
+        self.colors = []
+        self.white_keys = []
+        self.black_keys = []
+        self.white_colors = []
+        self.black_colors = []
+        self.rectangles = []
 
-        # generate 14 points to make up line
-        self.points = [start_pos, start_pos] # left most point
-        for i in range(1, 13):
-            self.points.append(i * (bar_length+start_pos)/14)
-            self.points.append(start_pos)
+        start_pos = width * 15
+        for i in range(12, 24):
+            color = Color(rgb = (1.0, 1.0, 1.0))
+            if i in [13, 15, 18, 20, 22]:
+                bar = Rectangle(pos=(start_pos - width/4, 0.96*Window.height - 0.75*buff), size=(width/2, 0.75*self.buffer))
 
-        # add rightmost point
-        self.points.append(bar_length + start_pos)
-        self.points.append(start_pos)
+                self.black_keys.append(bar)
+                self.black_colors.append(color)
 
-        # Bezier or line??
-        self.line = Line(points=self.points, width=3, joint='round', cap='round')
-        #self.line = Bezier(points=self.points)
-        self.add(self.line)
+            else:
+                bar = Rectangle(pos=(start_pos, 0.96*Window.height - 1.5*buff), size=(width, 1.5*self.buffer))
+                start_pos += width
+                self.white_keys.append(bar)
+                self.white_colors.append(color)
+            self.colors.append(color)
+            self.rectangles.append(bar)
+        
+        for i in range(len(self.white_keys)):
+            self.add(self.white_colors[i])
+            self.add(self.white_keys[i])
 
-    def on_segment(self, data):
+        for i in range(len(self.black_keys)):
+            # outline in background
+            self.add(Color(rgb = (0.0, 0.0, 0.0)))
+            pos = self.black_keys[i].pos
+            size = self.black_keys[i].size
+            background_rect = Rectangle(pos = (pos[0] - 5, pos[1] - 5), size = (size[0] * 1.1, size[1] * 1.1))
+
+            self.add(background_rect)
+            self.add(self.black_colors[i])
+            self.add(self.black_keys[i])
+
+
+
+
+    def on_segment(self, data, color):
         pitches = data['pitches']
-        points = self.points.copy()
+        colors = generate_sub_palette(color, 12)
+        sorted_pitches = sorted(enumerate(pitches), key=lambda x: x[1])
 
-        # update the middle 12 points according to pitches
-        for i in range(len(pitches)):
-            y_pos = (self.bar_height * pitches[i]) + self.bar_height
+        for i in range(len(sorted_pitches)):
+            ind, pitch = sorted_pitches[i]
+            new_color = colors[11 - ind]
+            self.colors[i].rgb = new_color
 
-            points[2*i+3] = y_pos
 
-        self.line.points = points
+        
+
+    def on_section(self, color):
+        pass
 
     def on_update(self):
+        '''
         for i in range(1, 24, 2):
             diff = self.line.points[i] - 1.5*self.bar_height
             #self.line.points[i] -= 0.5*diff
+        '''
+        pass
 
 
 class ProgressBar(InstructionGroup):
@@ -98,8 +134,8 @@ class ProgressBar(InstructionGroup):
 
         # make pitch pulse
         # progress bar starts at (self.buffer, self.buffer)
-        self.pitch_line = PitchPulse(self.length, self.buffer)
-        self.add(self.pitch_line)
+        self.pitch_pulse = PitchPulse(self.buffer)
+        self.add(self.pitch_pulse)
 
     def update_song(self, sections, duration):
         self.sections = sections
@@ -132,9 +168,7 @@ class ProgressBar(InstructionGroup):
     def get_section_color(self, i):
         return self.section_color[i]
 
-    def on_segment(self, data):
-        self.pitch_line.on_segment(data)
 
     def on_update(self, progress):
         self.progress_mark.pos = ((self.length * progress) + self.buffer, self.buffer)
-        self.pitch_line.on_update()
+        self.pitch_pulse.on_update()
