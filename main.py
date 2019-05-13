@@ -64,7 +64,6 @@ class User(InstructionGroup):
         # the mode for each section
         self.section_modes = [int(random() * len(self.modes)) for i in
                               range(len(self.audio.get_current_track().get_sections()))]
-        # self.section_modes = [4 for i in range(len(self.audio.get_current_track().get_sections()))]
 
         # instance of current mode
         self.current_mode = None
@@ -102,14 +101,16 @@ class User(InstructionGroup):
     def update_progress_bar(self, progress_bar):
         self.progress_bar = progress_bar
 
-    def on_touch_move(self, touch):
+    def on_bar(self):
         if self.current_mode:
-            self.current_mode.on_touch_move(touch)
+            self.current_mode.on_bar(touch)
 
     def on_update(self, time):
         self.time = time
 
         self.is_onbeat = self.audio.get_current_track().on_beat(self.time, 0.1)
+
+        self.is_onbar = self.audio.get_current_track().on_bar(self.time, 0.1)
 
         section_index = self.audio.get_current_track().get_section_index(time)
 
@@ -181,6 +182,9 @@ class User(InstructionGroup):
         if self.is_onbeat:
             self.current_mode.on_beat()
 
+        if self.is_onbar:
+            self.current_mode.on_bar()
+
         segment_index = self.audio.get_current_track().get_segment_index(time)
         if segment_index != self.current_segment:
             self.current_segment = segment_index
@@ -240,9 +244,6 @@ class MainWidget(BaseWidget):
     def on_key_down(self, keycode, modifiers):
         if keycode[1] == 'spacebar':
             self.ui.spacebar()
-
-    def on_touch_move(self, touch):
-        self.ui.on_touch_move(touch)
 
     def call_api(self):
         # continuously call spotify api to update time

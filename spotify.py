@@ -55,6 +55,8 @@ class Song:
             if b['confidence'] > CONFIDENCE_THRESHOLD:
                 self.bars.append((b['start'], b['duration']))
 
+        self.bar_flag = [False] * len(self.bars)
+
         for s in data['segments']:
             # SEGMENTS DATA: list of dictionaries where keys are {start, duration, confidence, loudness_start,
             # loudness_max_time, loudness_max, loudness_end, pitches, timbre}
@@ -136,8 +138,14 @@ class Song:
             if self.bars[i][0] > time:
                 break
 
-        # return true is close enough to beat directly before or after
-        return abs(time - self.bars[i - 1][0]) < threshold or abs(time - self.bars[i][0]) < threshold
+        # return True is close enough to beat directly before or after
+        if abs(time - self.bars[i - 1][0]) < threshold and not self.bar_flag[i-1]:
+            self.bar_flag[i-1] = True
+            return True
+        if abs(time - self.bars[i][0]) < threshold and not self.bar_flag[i]:
+            self.bar_flag[i] = True
+            return True
+        return False
 
 
 class Audio:

@@ -294,7 +294,7 @@ class Prism(InstructionGroup):
         for v in self.vertices.values():
             v.on_tatum()
 
-    def on_touch_move(self, touch):
+    def on_bar(self):
         pass
 
     def on_update(self, time):

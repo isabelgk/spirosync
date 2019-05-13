@@ -26,7 +26,7 @@ class PulsingBar(InstructionGroup):
 
         self.on_beat_time = None
 
-    def on_touch_move(self, touch):
+    def on_bar(self):
         pass
 
     def on_beat(self):

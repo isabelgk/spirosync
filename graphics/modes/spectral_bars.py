@@ -66,7 +66,7 @@ class SpectralBars(InstructionGroup):
             left_translate.y = timbre[i]
             right_translate.y = timbre[i]
 
-    def on_touch_move(self, touch):
+    def on_bar(self):
         pass
 
     def on_tatum(self):
