@@ -221,14 +221,11 @@ class MainWidget(BaseWidget):
         self.spacebar_down = False
 
         # Static text display
-        self.song_info = song_label()
-        self.add_widget(self.song_info)
+        self.right_info = song_label()
+        self.add_widget(self.right_info)
 
-        self.artist_info = artist_label()
-        self.add_widget(self.artist_info)
-
-        self.album_info = album_label()
-        self.add_widget(self.album_info)
+        self.left_info = left_label()
+        self.add_widget(self.left_info)
 
         # seems to be some lag??
         #self.time = self.audio.get_time() / 1000 # Song position in ms
@@ -308,9 +305,9 @@ class MainWidget(BaseWidget):
             self.time = song_time
 
 
-        self.song_info.text = self.name + '\n'
-        self.artist_info.text = self.artists + '\n'
-        self.album_info.text = self.album_name + '\n'
+        self.left_info.text = self.name + '\n'
+        self.right_info.text = self.artists + '\n'
+        # self.right_info.text += self.album_name + '\n'
 
         self.ui.on_update(self.time)
         self.progress_bar.on_update(self.progress)
@@ -318,9 +315,9 @@ class MainWidget(BaseWidget):
         # print(self.audio.get_current_track().get_section_index(self.time))
 
 
-def artist_label(font_filepath='res/font/CabinCondensed-Regular.ttf', font_size='20sp'):
-    l = Label(text="text", valign='top', halign='right', font_size=font_size,
-              pos=(0.80 * Window.width, Window.height * 0.4),
+def left_label(font_filepath='res/font/CabinCondensed-Regular.ttf', font_size='20sp'):
+    l = Label(text="text", valign='top', halign='left', font_size=font_size,
+              pos=(0.15 * Window.width, Window.height * 0.4),
               text_size=(0.25 * Window.width, Window.height))
     # print(l.pos)
     if font_filepath is not None:
@@ -329,22 +326,12 @@ def artist_label(font_filepath='res/font/CabinCondensed-Regular.ttf', font_size=
 
 
 def song_label(font_filepath='res/font/CabinCondensed-Regular.ttf', font_size='20sp'):
-    l = Label(text="text", valign='top', halign='center', font_size=font_size,
-              pos=(Window.width * 15 / 32, Window.height * 0.4),
+    l = Label(text="text", valign='top', halign='right', font_size=font_size,
+              pos=(Window.width * 0.8, Window.height * 0.4),
               text_size=(0.25 * Window.width, Window.height))
     if font_filepath is not None:
         l.font_name = font_filepath
     return l
-
-
-def album_label(font_filepath='res/font/CabinCondensed-Regular.ttf', font_size='20sp'):
-    l = Label(text = "text", valign='top', font_size=font_size,
-              pos=(Window.width * 0.5, Window.height * 0.4),
-              text_size=(Window.width, Window.height))
-    if font_filepath is not None:
-        l.font_name = font_filepath
-    return l
-
 
 if __name__ == "__main__":
     run(MainWidget)
