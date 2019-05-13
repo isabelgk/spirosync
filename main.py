@@ -19,6 +19,7 @@ from graphics.mode_transition import ModeTransition
 from graphics.progress_bar import ProgressBar
 from spotify import *
 
+DEMO = True
 
 global song_time
 song_time = 0
@@ -59,12 +60,18 @@ class User(InstructionGroup):
         self.current_background = None
 
         # list of all modes
-        self.modes = [PulsingBar, Tunnel, SpectralBars, Prism, Kaleidoscope]
+        if not DEMO:
+            self.modes = [PulsingBar, Tunnel, SpectralBars, Prism, Kaleidoscope]
+
+        else:
+            self.modes = [PulsingBar, Tunnel, Tunnel, SpectralBars, SpectralBars, Prism, Prism, Kaleidoscope, Kaleidoscope, PulsingBar]
+        
 
         # the mode for each section
+        
         self.section_modes = [int(random() * len(self.modes)) for i in
                               range(len(self.audio.get_current_track().get_sections()))]
-
+        
         # instance of current mode
         self.current_mode = None
 
@@ -130,8 +137,17 @@ class User(InstructionGroup):
             self.current_background = new_background
 
             color = self.progress_bar.get_section_color(section_index + 1)
-            shuffle(self.modes)
-            new_mode = ModeTransition(color, self.modes[0], self.modes[1], self.time, self.transition_time)
+            if not DEMO:
+                shuffle(self.modes)
+                new_mode = ModeTransition(color, self.modes[0], self.modes[1], self.time, self.transition_time)
+            else:
+                new_mode = ModeTransition(color, self.modes[0], self.modes[1], self.time, self.transition_time)
+                mode1 = self.modes.pop(0)
+                mode2 = self.modes.pop(1)
+
+                self.modes.append(mode1)
+                self.modes.append(mode2)
+
 
             if self.current_mode:
                 self.remove(self.current_mode)
@@ -152,8 +168,18 @@ class User(InstructionGroup):
             self.current_background = new_background
 
             color = self.progress_bar.get_section_color(section_index)
-            shuffle(self.modes)
-            new_mode = ModeTransition(color, self.modes[0], self.modes[1], self.time, self.transition_time)
+
+            if not DEMO:
+                shuffle(self.modes)
+                new_mode = ModeTransition(color, self.modes[0], self.modes[1], self.time, self.transition_time)
+            else:
+                new_mode = ModeTransition(color, self.modes[0], self.modes[1], self.time, self.transition_time)
+                mode1 = self.modes.pop(0)
+                mode2 = self.modes.pop(1)
+
+                self.modes.append(mode1)
+                self.modes.append(mode2)
+
 
             if self.current_mode:
                 self.remove(self.current_mode)
@@ -203,8 +229,8 @@ class MainWidget(BaseWidget):
     def __init__(self):
         super(MainWidget, self).__init__()
 
-        # self.audio = Audio('1235254187')  # Serena
-        self.audio = Audio("isabelkaspriskie")  # Isabel
+        self.audio = Audio('1235254187')  # Serena
+        # self.audio = Audio("isabelkaspriskie")  # Isabel
         # self.audio = Audio("shann0nduffy")  # Shannon
 
         self.sections = self.audio.get_current_track().get_sections_data()
